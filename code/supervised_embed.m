@@ -1,5 +1,6 @@
-function [w, x, P, fval] = ss_vector_embedding(Q, ndim, maxiter, labels, alpha, beta)
-    [nnode ncontext] = size(Q);
+function [w, x, P, fval] = supervised_embed(Q, ndim, maxiter, labels, ... 
+    cl_penalty, ml_penalty)
+    [nnode, ncontext] = size(Q);
     nparam = (nnode + ncontext) * ndim;
     
     % create the must-link and cannot-link matrices (0s and 1s)
@@ -9,8 +10,8 @@ function [w, x, P, fval] = ss_vector_embedding(Q, ndim, maxiter, labels, alpha, 
     n_ml = sum(sum(ml))/2;
     n_cl = sum(sum(cl))/2;
     
-    ml = (beta/(n_ml*n_ml)) * ml;
-    cl = (alpha/(n_cl*n_cl)) * cl;
+    ml = (ml_penalty/(n_ml*n_ml)) * ml;
+    cl = (cl_penalty/(n_cl*n_cl)) * cl;
     
     % creates the combined constraint matrix
     S = ml - cl;
@@ -25,7 +26,7 @@ function [w, x, P, fval] = ss_vector_embedding(Q, ndim, maxiter, labels, alpha, 
       fprintf('done. '); toc
 
       opts.x0 = wx(:);
-      [xopt, fval, info] = lbfgsb(@optim_fn, -inf(nparam,1), inf(nparam,1), opts);
+      [xopt, ~, info] = lbfgsb(@optim_fn, -inf(nparam,1), inf(nparam,1), opts);
       if info.iterations > 10
         break
       end
@@ -42,6 +43,9 @@ function [w, x, P, fval] = ss_vector_embedding(Q, ndim, maxiter, labels, alpha, 
     P = P_fn(w,x);
     fval = obj_fn(P);
     
+
+    %% Loss function that we are optimizing for
+    % kl-divergence + must-link + cannot-link
     function [fval, grad] = optim_fn(wx)
         
         wx = reshape(wx, ndim, nnode + ncontext);
@@ -55,11 +59,13 @@ function [w, x, P, fval] = ss_vector_embedding(Q, ndim, maxiter, labels, alpha, 
 
         % unsupervised gradietns
         wgrad = x * (P-Q);
-        xgrad = w * (P-Q)';
+        u_xgrad = w * (P-Q)';
         
         % supervised gradient
-        
-        grad = [wgrad, xgrad];
+        % need to check this is correct (things might need transposing)
+        s_xgrad = x * diag(sum(S)) - S * X;
+
+        grad = [wgrad, u_xgrad + s_xgrad];
 
         grad = grad(:);
     end

@@ -104,11 +104,13 @@ if svd_approx
   x = svd_embed(walks, ndim);
 else
   if strcmp(embedding_mode, 'unsupervised')
-    x = unsupervised_embed(walks, ndim);
+    x = unsupervised_embed(walks, ndim, 1000); % 3rd arg is max iterations
   else
-    x = supervised_embed(walks, ndim, mustlink_penalty, cannotlink_penalty);
+    x = supervised_embed(walks, ndim, mustlink_penalty, ... 
+      cannotlink_penalty, 1000); % 5th arg is max iterations
   end
 end
+
 
 
 

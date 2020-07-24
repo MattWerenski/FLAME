@@ -1,5 +1,7 @@
-function [w, x, P, fval] = vector_embedding(Q, ndim, maxiter)
-    [nnode ncontext] = size(Q);
+function [w, x, P, fval] = unsupervised_embed(walks, ndim, maxiter)
+    [nnetworks, ngenes, ~] = size(walks);
+    Q = reshape(walks, ngenes*nnetworks, ngenes) ;%% TODO validate this
+    [nnode, ncontext] = size(Q);
     nparam = (nnode + ncontext) * ndim;
     
     %% Optimize
@@ -12,7 +14,7 @@ function [w, x, P, fval] = vector_embedding(Q, ndim, maxiter)
       fprintf('done. '); toc
 
       opts.x0 = wx(:);
-      [xopt, fval, info] = lbfgsb(@optim_fn, -inf(nparam,1), inf(nparam,1), opts);
+      [xopt, ~, info] = lbfgsb(@optim_fn, -inf(nparam,1), inf(nparam,1), opts);
       if info.iterations > 10
         break
       end
