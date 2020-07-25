@@ -112,7 +112,7 @@ else
 end
 
 %% TODO add in the svm code
-
+run_svm(x, anno, test_filt);
 
 %% Split annotations 
 function [ntest, test_filt] = cv_partition(anno, test_frac)
