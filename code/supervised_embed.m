@@ -1,15 +1,23 @@
-function [w, x, P, fval] = supervised_embed(Q, ndim, maxiter, labels, ... 
+function [w, x, P, fval] = supervised_embed(walks, ndim, maxiter, labels, ... 
     cl_penalty, ml_penalty)
-    [nnode, ncontext] = size(Q);
+
+    [nnetworks, ngenes, ~] = size(walks);
+    Q = zeros(ngenes*nnetworks, ngenes);
+    
+    % probably a better way to do this
+    for i=1:nnetworks
+        Q((i-1)*ngenes+1 : i*ngenes, :) = squeeze(walks(i,:,:)) / nnetworks;
+    end
+    
+    [ncontext, nnode] = size(Q);
     nparam = (nnode + ncontext) * ndim;
     
     % create the must-link and cannot-link matrices (0s and 1s)
     ml = mustlink(labels);
     cl = cannotlink(ml, labels);
-    % reweight them using alpha and beta
+    % reweight them using 
     n_ml = sum(sum(ml))/2;
     n_cl = sum(sum(cl))/2;
-    
     ml = (ml_penalty/(n_ml*n_ml)) * ml;
     cl = (cl_penalty/(n_cl*n_cl)) * cl;
     
@@ -52,7 +60,12 @@ function [w, x, P, fval] = supervised_embed(Q, ndim, maxiter, labels, ...
         w = wx(:,1:ncontext);
         x = wx(:,ncontext+1:end);
         
+        size(w)
+        size(x)
+        
         P = P_fn(w,x);
+        
+        size(P)
 
         % add the supervised penalty
         fval = obj_fn(P,S,x);
@@ -76,8 +89,8 @@ function [w, x, P, fval] = supervised_embed(Q, ndim, maxiter, labels, ...
     end
 
     function res = obj_fn(P,S,x)
-        unsup = zeros(ncontext,1);
-        for j = 1:ncontext
+        unsup = zeros(nnode,1);
+        for j = 1:nnode
             unsup(j) = kldiv(Q(:,j),P(:,j));
         end
         % pairwise distances times the penalty (squared euclidean)

@@ -1,7 +1,7 @@
 function x = svd_embed(walks, ndim)
-  ngene = shape(walk, 2);
+  [nnetworks, ngene, ~]  = size(walks);
   RR_sum = zeros(ngene);
-  for i = 1:length(network_files)
+  for i = 1:nnetworks
     W = walks(i);
     R = log(W + 1/ngene); % smoothing
     RR_sum = RR_sum + R * R';

@@ -1,2 +1,5 @@
+.ipynb_checkpoints
+L-BFGS-B-C
+libsvm-3.24
 data/**
 **/.DS_Store

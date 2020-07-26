@@ -15,7 +15,7 @@ function [acc, f1, aupr] = run_svm(x, anno, test_filt)
   
     [nclass, ngene] = size(anno);
       
-    test_filt = test_filt(:,filt);
+    test_filt = test_filt(filt);
     ntest = sum(test_filt);
     ntrain = ngene - ntest;
   
@@ -87,6 +87,6 @@ function [acc, f1, aupr] = run_svm(x, anno, test_filt)
   
 
     [acc, f1, aupr] = evaluate_performance(class_score, anno(:,test_filt)');
-    fprintf('[Trial #%d] acc: %f, f1: %f, aupr: %f\n', p, acc(p), f1(p), aupr(p));
+    fprintf('[Trial #%d] acc: %f, f1: %f, aupr: %f\n', 1, acc, f1, aupr);
 end
   

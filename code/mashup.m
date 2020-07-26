@@ -3,7 +3,7 @@
 %% ndim (int): number of output dimensions 
 %% svd_approx (bool): whether to use SVD approximation for large-scale networks
 %%
-function x = mashup(network_files, ngene, ndim, svd_approx)
+function [x, Q_concat] = mashup(network_files, ngene, ndim, svd_approx)
   if svd_approx
     RR_sum = zeros(ngene);
     for i = 1:length(network_files)
@@ -25,16 +25,19 @@ function x = mashup(network_files, ngene, ndim, svd_approx)
     for i = 1:length(network_files)
       fprintf('Loading %s\n', network_files{i});
       A = load_network(network_files{i}, ngene);
+      P = markov_mat(A);
       fprintf('Running diffusion\n');
-      Q = rwr(A, 0.5);
+      Q = rwr(P, 0.5);
 
       Q_concat = [Q_concat; Q];
     end
+    fprintf('size q concat:\n');
+    size(Q_concat)
     clear Q A
-    Q_concat = Q_concat / length(network_files);
+    %Q_concat = Q_concat / length(network_files);
 
     fprintf('All networks loaded. Learning vectors via iterative optimization...\n');
-    x = vector_embedding(Q_concat, ndim, 1000);
+    x = 0; %vector_embedding(Q_concat, ndim, 1000);
   end
 
   fprintf('Mashup features obtained.\n');

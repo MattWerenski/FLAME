@@ -1,6 +1,12 @@
 function [w, x, P, fval] = unsupervised_embed(walks, ndim, maxiter)
     [nnetworks, ngenes, ~] = size(walks);
-    Q = reshape(walks, ngenes*nnetworks, ngenes) ;%% TODO validate this
+    Q = zeros(ngenes*nnetworks, ngenes);
+    
+    % probably a better way to do this
+    for i=1:nnetworks
+        Q((i-1)*ngenes+1 : i*ngenes, :) = squeeze(walks(i,:,:)) / nnetworks;
+    end
+    
     [nnode, ncontext] = size(Q);
     nparam = (nnode + ncontext) * ndim;
     
