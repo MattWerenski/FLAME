@@ -1,13 +1,13 @@
 function walks = semisupervised_rwr(network_files, ngene, restart_prob,...
-     labels, teleport_prob)
+      teleport_prob, labels)
   nfiles = length(network_files);
   walks = zeros(nfiles, ngene, ngene);
   for i=1:nfiles
     A = load_network(network_files{i}, ngene);
-    P = markov_matrix(A);
+    P = markov_mat(A);
     P = semisupervise_markov(P, labels, teleport_prob);
     W = rwr(P, restart_prob);
-    walks(i) = W;
+    walks(i,:,:) = W;
   end
   clear A P
 end
@@ -15,7 +15,7 @@ end
 
 function Ps = semisupervise_markov(P, labels, teleport_prob)
   Ps = P;
-  n = size(A,1);
+  n = size(P,1);
   nlabels = size(labels,1);
 
   % indicator vector for vertices in the training set

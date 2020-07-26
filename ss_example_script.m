@@ -25,7 +25,7 @@ walk_mode = 'unsupervised'; % determines what type of RWR to perform
 teleport_prob= 0.5; % only uses in semi-supervised walk mode. The chance that
                     % the chance that a walk entering a labeled vertex jumps to
                     % another vertex with that label instead of doing the normal walk
-embedding_mode = 'supervised'; % determines what type of embedding to do
+embedding_mode = 'unsupervised'; % determines what type of embedding to do
                     % Only applies when svd_approx is set to false. Options are
                     % 'unsupervised' performs the standard optimization of mashup
                     % 'supervised' introduces penalties using the labels
@@ -106,9 +106,9 @@ if strcmp(walk_mode, 'unsupervised')
   walks = unsupervised_rwr(network_files, ngene, restart_prob);
 elseif strcmp(walk_mode, 'semi-supervised')
   walks = semisupervised_rwr(network_files, ngene, restart_prob, ...
-    teleport_fraction, training_labels);
+    teleport_prob, training_labels);
 else
-  walks = supervised_rwr(network_files, ngene, restart_prob, ...
+  walks = semisupervised_rwr(network_files, ngene, restart_prob, ...
     1.0, training_labels);
 end
 

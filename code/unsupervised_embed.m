@@ -1,4 +1,7 @@
 function [w, x, P, fval] = unsupervised_embed(walks, ndim, maxiter)
+    % this is really confusingly coded, but we mostly want to get w out of it 
+    
+    
     [nnetworks, ngenes, ~] = size(walks);
     Q = zeros(ngenes*nnetworks, ngenes);
     

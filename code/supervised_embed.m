@@ -9,7 +9,7 @@ function [w, x, P, fval] = supervised_embed(walks, ndim, maxiter, labels, ...
         Q((i-1)*ngenes+1 : i*ngenes, :) = squeeze(walks(i,:,:)) / nnetworks;
     end
     
-    [ncontext, nnode] = size(Q);
+    [nnode, ncontext] = size(Q);
     nparam = (nnode + ncontext) * ndim;
     
     % create the must-link and cannot-link matrices (0s and 1s)
@@ -49,7 +49,7 @@ function [w, x, P, fval] = supervised_embed(walks, ndim, maxiter, labels, ...
     w = wx(:,1:ncontext);
     x = wx(:,ncontext+1:end);
     P = P_fn(w,x);
-    fval = obj_fn(P);
+    fval = obj_fn(P,S,w);
     
 
     %% Loss function that we are optimizing for
@@ -60,25 +60,19 @@ function [w, x, P, fval] = supervised_embed(walks, ndim, maxiter, labels, ...
         w = wx(:,1:ncontext);
         x = wx(:,ncontext+1:end);
         
-        size(w)
-        size(x)
-        
         P = P_fn(w,x);
-        
-        size(P)
 
         % add the supervised penalty
-        fval = obj_fn(P,S,x);
+        fval = obj_fn(P,S,w);
 
         % unsupervised gradietns
-        wgrad = x * (P-Q);
-        u_xgrad = w * (P-Q)';
+        u_wgrad = x * (P-Q);
+        xgrad = w * (P-Q)';
         
         % supervised gradient
-        % need to check this is correct (things might need transposing)
-        s_xgrad = x * diag(sum(S)) - S * X;
+        s_wgrad = w * diag(sum(S)) - w*S;
 
-        grad = [wgrad, u_xgrad + s_xgrad];
+        grad = [u_wgrad + s_wgrad, xgrad];
 
         grad = grad(:);
     end
@@ -88,13 +82,13 @@ function [w, x, P, fval] = supervised_embed(walks, ndim, maxiter, labels, ...
         P = bsxfun(@rdivide, P, sum(P));
     end
 
-    function res = obj_fn(P,S,x)
-        unsup = zeros(nnode,1);
-        for j = 1:nnode
+    function res = obj_fn(P,S,w)
+        unsup = zeros(ncontext,1);
+        for j = 1:ncontext
             unsup(j) = kldiv(Q(:,j),P(:,j));
         end
         % pairwise distances times the penalty (squared euclidean)
-        sup = (squareform(pdist(x')).^2).*S;
+        sup = (squareform(pdist(w')).^2).*S;
         % adds both unsupervised (kl-divergence) and supervised (distance)
         res = sum(unsup) + sum(sum(sup));
     end
