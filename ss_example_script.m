@@ -5,17 +5,17 @@ addpath libsvm-3.24/matlab % LIBSVM package (for cross_validation.m)
 addpath L-BFGS-B-C/Matlab % L-BFGS package (only if svd_approx = false)
 
 %% Example parameters
-test_fraction = 0.5; % portion of the labelled vertices to go in the 
+test_fraction = 0.8; % portion of the labelled vertices to go in the 
                     % testing set. (1 - test_fraction) is used to train
-org = 'random';      % use human or yeast data or random
+org = 'yeast';      % use human or yeast data or random
 onttype = 'level1'; % which type of annotations to use
                     %   options: {bp, mf, cc} for human GO,
                     %            {level1, level2, level3} for yeast MIPS
 ontsize = [];       % consider terms in a specific size range (*human GO only*)
                     %   examples: [11 30], [31 100], [101 300]
-svd_approx = false;  % use SVD approximation for Mashup
+svd_approx = true;  % use SVD approximation for Mashup
                     %   recommended: true for human, false for yeast
-ndim = 10;         % number of dimensions
+ndim = 500;         % number of dimensions
                     %   recommended: 800 for human, 500 for yeast
 restart_prob = 0.5; % chance that the random walk restarts itself
 walk_mode = 'unsupervised'; % determines what type of RWR to perform
@@ -25,7 +25,7 @@ walk_mode = 'unsupervised'; % determines what type of RWR to perform
 teleport_prob= 0.5; % only uses in semi-supervised walk mode. The chance that
                     % the chance that a walk entering a labeled vertex jumps to
                     % another vertex with that label instead of doing the normal walk
-embedding_mode = 'unsupervised'; % determines what type of embedding to do
+embedding_mode = 'supervised'; % determines what type of embedding to do
                     % Only applies when svd_approx is set to false. Options are
                     % 'unsupervised' performs the standard optimization of mashup
                     % 'supervised' introduces penalties using the labels
@@ -101,6 +101,7 @@ test_labels = anno.*(train_filt.');
 fprintf('[SMashup]\n');
 
 %% Performs the specified variant of RWR
+%{
 fprintf('[Performing RWR step]\n');
 if strcmp(walk_mode, 'unsupervised')
   walks = unsupervised_rwr(network_files, ngene, restart_prob);
@@ -111,8 +112,15 @@ else
   walks = semisupervised_rwr(network_files, ngene, restart_prob, ...
     1.0, training_labels);
 end
+%}
+fprintf('[Performing RWR step]\n');
+walks_standard = unsupervised_rwr(network_files, ngene, restart_prob);
+walks_semisup = semisupervised_rwr(network_files, ngene, restart_prob, ...
+    teleport_prob, training_labels);
 
 fprintf('[Performing embedding step]\n');
+
+%{
 if svd_approx
   x = svd_embed(walks, ndim);
 else
@@ -123,10 +131,14 @@ else
       cannotlink_penalty, mustlink_penalty); % 3rd arg is max iterations
   end
 end
+%}
+x_standard = svd_embed(walks_standard, ndim);
+x_semisup = svd_embed(walks_semisup, ndim);
 
-
-%% TODO add in the svm code
-run_svm(x, anno, test_filt);
+fprintf("standard mashup\n");
+run_svm(x_standard, anno, test_filt);
+fprintf("semi-super rw mashup\n");
+run_svm(x_semisup, anno, test_filt);
 
 %% Split annotations 
 function [ntest, test_filt] = cv_partition(anno, test_frac)

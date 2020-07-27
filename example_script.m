@@ -5,7 +5,7 @@ addpath ../libsvm-3.24/matlab % LIBSVM package (for cross_validation.m)
 addpath ../L-BFGS-B-C/Matlab % L-BFGS package (only if svd_approx = false)
 
 %% Example parameters
- org = 'yeast';      % use human or yeast data
+org = 'yeast';      % use human or yeast data
 onttype = 'level1'; % which type of annotations to use
                     %   options: {bp, mf, cc} for human GO,
                     %            {level1, level2, level3} for yeast MIPS
