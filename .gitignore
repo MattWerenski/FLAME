@@ -2,4 +2,5 @@
 L-BFGS-B-C
 libsvm-3.24
 data/**
+logs/**
 **/.DS_Store
