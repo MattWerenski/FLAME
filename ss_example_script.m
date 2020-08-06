@@ -34,7 +34,7 @@ mustlink_penalty = 0.1; % in supervised embedding the amount of penalty placed
 cannotlink_penalty = 0.01; % in supervised embedding the amount of penalty placed
                     % on the cannot link constraints
 
-
+profile on
 
 %% Construct network file paths
 string_nets = {'neighborhood', 'fusion', 'cooccurence', 'coexpression', ...
@@ -115,8 +115,7 @@ end
 %}
 fprintf('[Performing RWR step]\n');
 walks_standard = unsupervised_rwr(network_files, ngene, restart_prob);
-walks_semisup = semisupervised_rwr(network_files, ngene, restart_prob, ...
-    teleport_prob, training_labels);
+
 
 fprintf('[Performing embedding step]\n');
 
@@ -132,8 +131,11 @@ else
   end
 end
 %}
-x_standard = svd_embed(walks_standard, ndim);
-x_semisup = svd_embed(walks_semisup, ndim);
+x_standard = unsupervised_embed(walks, ndim, 250);
+x_semisup = supervised_embed(walks, ndim, 250, training_labels, ... 
+  cannotlink_penalty, mustlink_penalty);
+
+profsave
 
 fprintf("standard mashup\n");
 run_svm(x_standard, anno, test_filt);

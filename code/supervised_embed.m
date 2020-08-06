@@ -24,7 +24,7 @@ function [w, x, P, fval] = supervised_embed(walks, ndim, maxiter, labels, ...
     % creates the combined constraint matrix
     S = sparse(ml - cl);
     Ls = sparse(diag(sum(S)) - S);
-    
+
     %% Optimize
     opts = struct('factr', 1e4, 'pgtol', 0, 'm', 5, 'printEvery', 50, 'maxIts', maxiter);
 
