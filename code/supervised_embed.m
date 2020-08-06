@@ -22,7 +22,7 @@ function [w, x, P, fval] = supervised_embed(walks, ndim, maxiter, labels, ...
     cl = (cl_penalty/(n_cl*n_cl)) * cl;
     
     % creates the combined constraint matrix
-    S = ml - cl;
+    S = sparse(ml - cl);
     Ls = sparse(diag(sum(S)) - S);
     
     %% Optimize
