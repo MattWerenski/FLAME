@@ -23,6 +23,7 @@ function [w, x, P, fval] = supervised_embed(walks, ndim, maxiter, labels, ...
     
     % creates the combined constraint matrix
     S = ml - cl;
+    Ls = sparse(diag(sum(S)) - S);
     
     %% Optimize
     opts = struct('factr', 1e4, 'pgtol', 0, 'm', 5, 'printEvery', 50, 'maxIts', maxiter);
@@ -70,7 +71,7 @@ function [w, x, P, fval] = supervised_embed(walks, ndim, maxiter, labels, ...
         xgrad = w * (P-Q)';
         
         % supervised gradient
-        s_wgrad = w * diag(sum(S)) - w*S;
+        s_wgrad = w * Ls;
 
         grad = [u_wgrad + s_wgrad, xgrad];
 
@@ -88,7 +89,7 @@ function [w, x, P, fval] = supervised_embed(walks, ndim, maxiter, labels, ...
             unsup(j) = kldiv(Q(:,j),P(:,j));
         end
         % pairwise distances times the penalty (squared euclidean)
-        sup = (squareform(pdist(w')).^2).*S;
+        sup = (squareform(pdist(w', 'squaredeuclidean'))).*S;
         % adds both unsupervised (kl-divergence) and supervised (distance)
         res = sum(unsup) + sum(sum(sup));
     end
