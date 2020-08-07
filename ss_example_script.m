@@ -114,8 +114,7 @@ else
 end
 %}
 fprintf('[Performing RWR step]\n');
-walks_standard = unsupervised_rwr(network_files, ngene, restart_prob);
-
+walks = unsupervised_rwr(network_files, ngene, restart_prob);
 
 fprintf('[Performing embedding step]\n');
 
@@ -139,5 +138,5 @@ profsave
 
 fprintf("standard mashup\n");
 run_svm(x_standard, anno, test_filt);
-fprintf("semi-super rw mashup\n");
+fprintf("semi-super emb mashup\n");
 run_svm(x_semisup, anno, test_filt);
