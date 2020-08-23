@@ -1,4 +1,4 @@
-function x = svd_supervised_embed(walks, ndim, maxiter, labels, ... 
+function x = svd_supervised_embed(walks, ndim, labels, ... 
     cl_penalty, ml_penalty)
 
     [nnetworks, ngenes, ~] = size(walks);
@@ -8,9 +8,6 @@ function x = svd_supervised_embed(walks, ndim, maxiter, labels, ...
     for i=1:nnetworks
         Q((i-1)*ngenes+1 : i*ngenes, :) = squeeze(walks(i,:,:)) / nnetworks;
     end
-    
-    [nnode, ncontext] = size(Q);
-    nparam = (nnode + ncontext) * ndim;
     
     % create the must-link and cannot-link matrices (0s and 1s)
     ml = mustlink(labels);
@@ -23,24 +20,22 @@ function x = svd_supervised_embed(walks, ndim, maxiter, labels, ...
     
     % creates the combined constraint matrix
     S = ml - cl;
+    nz = nnz(S);
+    % Checking how dense supervised matrix is
+    fprintf('  Supervised penalty has %d non-zero (%f percent)\n', nz, 100 * nz / (ngenes * ngenes));
     LS = diag(sum(S))-S;
     
-  [nnetworks, ngene, ~]  = size(walks);
-  RR_sum = zeros(ngene);
-  for i = 1:nnetworks
-    W = walks(i);
-    R = log(W + 1/ngene); % smoothing
-    RR_sum = RR_sum + R * R';
-  end
-  clear R Q A
-  [V, d] = eigs(RR_sum-LS, ndim);
-  %x = diag(sqrt(sqrt(diag(d)))) * V';
-  x = V';
-    
-     
-
-    %% Loss function that we are optimizing for
-    % kl-divergence + must-link + cannot-link
+    [nnetworks, ngene, ~]  = size(walks);
+    RR_sum = zeros(ngene);
+    for i = 1:nnetworks
+        W = walks(i);
+        R = log(W + 1/ngene); % smoothing
+        RR_sum = RR_sum + R * R';
+    end
+    clear R Q
+    [V, d] = eigs(RR_sum-LS, ndim);
+    %x = diag(sqrt(sqrt(diag(d)))) * V';
+    x = V';
      
 
     function cl = cannotlink(ml, labels)

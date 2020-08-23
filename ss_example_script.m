@@ -7,15 +7,15 @@ addpath L-BFGS-B-C/Matlab % L-BFGS package (only if svd_approx = false)
 %% Example parameters
 test_fraction = 0.8; % portion of the labelled vertices to go in the 
                     % testing set. (1 - test_fraction) is used to train
-org = 'yeast';      % use human or yeast data or random
-onttype = 'level1'; % which type of annotations to use
+org = 'human';      % use human or yeast data or random
+onttype = 'bp'; % which type of annotations to use
                     %   options: {bp, mf, cc} for human GO,
                     %            {level1, level2, level3} for yeast MIPS
-ontsize = [];       % consider terms in a specific size range (*human GO only*)
+ontsize = [31 100];       % consider terms in a specific size range (*human GO only*)
                     %   examples: [11 30], [31 100], [101 300]
 svd_approx = true;  % use SVD approximation for Mashup
                     %   recommended: true for human, false for yeast
-ndim = 500;         % number of dimensions
+ndim = 800;         % number of dimensions
                     %   recommended: 800 for human, 500 for yeast
 restart_prob = 0.5; % chance that the random walk restarts itself
 walk_mode = 'unsupervised'; % determines what type of RWR to perform
@@ -33,8 +33,6 @@ mustlink_penalty = 0.1; % in supervised embedding the amount of penalty placed
                     % on the mustlink constraints
 cannotlink_penalty = 0.01; % in supervised embedding the amount of penalty placed
                     % on the cannot link constraints
-
-profile on
 
 %% Construct network file paths
 string_nets = {'neighborhood', 'fusion', 'cooccurence', 'coexpression', ...
@@ -54,7 +52,6 @@ for i = 1:length(string_nets)
 end
 
 
-
 %% Load gene list
 gene_file = sprintf('data/networks/%s/%s_string_genes.txt', org, org);
 if strcmp('random',org) 
@@ -62,7 +59,6 @@ if strcmp('random',org)
 end
 genes = textread(gene_file, '%s');
 ngene = length(genes);
-
 
 
 %% Load known annotations
@@ -77,9 +73,8 @@ end
 fprintf('Number of functional labels: %d\n', size(anno, 1));
 
 
-
 %% Generate the training and testing sets
-test_frac = 0.5;
+test_frac = 0.;
 fprintf('Acquiring test filter using %d testing fraction\n', test_frac);
 [~, test_filt] = cv_partition(anno, test_frac); 
 % filters proteins with no labels
@@ -101,7 +96,7 @@ test_labels = anno.*(train_filt.');
 fprintf('[SMashup]\n');
 
 %% Performs the specified variant of RWR
-%{
+
 fprintf('[Performing RWR step]\n');
 if strcmp(walk_mode, 'unsupervised')
   walks = unsupervised_rwr(network_files, ngene, restart_prob);
@@ -112,15 +107,17 @@ else
   walks = semisupervised_rwr(network_files, ngene, restart_prob, ...
     1.0, training_labels);
 end
-%}
-fprintf('[Performing RWR step]\n');
-walks = unsupervised_rwr(network_files, ngene, restart_prob);
 
-fprintf('[Performing embedding step]\n');
+%fprintf('[Performing embedding step]\n');
 
 %{
 if svd_approx
-  x = svd_embed(walks, ndim);
+  if strcmp(embedding_mode, 'unsupervised')
+    x = svd_embed(walks, ndim);
+  else
+    x = svd_supervised_embed(walks, ndim, training_labels, ... 
+      cannotlink_penalty, mustlink_penalty); 
+  end
 else
   if strcmp(embedding_mode, 'unsupervised')
     x = unsupervised_embed(walks, ndim, 1000); % 3rd arg is max iterations
@@ -130,11 +127,27 @@ else
   end
 end
 %}
-x_standard = unsupervised_embed(walks, ndim, 250);
-x_semisup = supervised_embed(walks, ndim, 250, training_labels, ... 
-  cannotlink_penalty, mustlink_penalty);
 
-profsave
+fprintf('  Performing standard MU for baseline\n');
+x_baseline = svd_embed(walks, ndim);
+run_svm(x_baseline, anno, test_filt);
+
+fprintf('  Performing hyper-parameter search\n');
+ml_penalties = [0.0001 0.001 0.01 0.1 1 10 100];
+cl_penalties = [0.00001 0.0001 0.001 0.01 0.1 1 10];
+
+for ml_idx = 1:length(ml_penalties)
+  for cl_idx = 1:length(cl_penalties)
+    mustlink_penalty = ml_penalties(ml_idx);
+    cannotlink_penalty = cl_penalties(cl_idx);
+
+    fprintf('ML = %f CL = %f\n', mustlink_penalty, cannotlink_penalty);
+    x = svd_supervised_embed(walks, ndim, training_labels, ... 
+      cannotlink_penalty, mustlink_penalty); 
+    run_svm(x, anno, test_filt);
+  end
+end
+
 
 fprintf("standard mashup\n");
 run_svm(x_standard, anno, test_filt);
