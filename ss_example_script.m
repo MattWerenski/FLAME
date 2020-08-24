@@ -147,9 +147,3 @@ for ml_idx = 1:length(ml_penalties)
     run_svm(x, anno, test_filt);
   end
 end
-
-
-fprintf("standard mashup\n");
-run_svm(x_standard, anno, test_filt);
-fprintf("semi-super emb mashup\n");
-run_svm(x_semisup, anno, test_filt);

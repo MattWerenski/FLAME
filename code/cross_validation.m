@@ -101,7 +101,7 @@ function [acc, f1, aupr] = cross_validation(x, anno, nperm)
       if ~isempty(posind)
         [~, ~, dec] = svmpredict(Ytest, [(1:ntest)', Ktest], model, '-q');
         class_score(:,s) = dec(:,posind);
-      end
+      end 
     end
 
     test_data.class_score{p} = class_score;
