@@ -7,15 +7,15 @@ addpath L-BFGS-B-C/Matlab % L-BFGS package (only if svd_approx = false)
 %% Example parameters
 test_fraction = 0.8; % portion of the labelled vertices to go in the 
                     % testing set. (1 - test_fraction) is used to train
-org = 'human';      % use human or yeast data or random
-onttype = 'bp'; % which type of annotations to use
+org = 'yeast';      % use human or yeast data or random
+onttype = 'level1'; % which type of annotations to use
                     %   options: {bp, mf, cc} for human GO,
                     %            {level1, level2, level3} for yeast MIPS
 ontsize = [31 100];       % consider terms in a specific size range (*human GO only*)
                     %   examples: [11 30], [31 100], [101 300]
 svd_approx = true;  % use SVD approximation for Mashup
                     %   recommended: true for human, false for yeast
-ndim = 800;         % number of dimensions
+ndim = 500;         % number of dimensions
                     %   recommended: 800 for human, 500 for yeast
 restart_prob = 0.5; % chance that the random walk restarts itself
 walk_mode = 'unsupervised'; % determines what type of RWR to perform
@@ -74,9 +74,8 @@ fprintf('Number of functional labels: %d\n', size(anno, 1));
 
 
 %% Generate the training and testing sets
-test_frac = 0.;
-fprintf('Acquiring test filter using %d testing fraction\n', test_frac);
-[~, test_filt] = cv_partition(anno, test_frac); 
+fprintf('Acquiring test filter using %d testing fraction\n', test_fraction);
+[~, test_filt] = cv_partition(anno, test_fraction); 
 % filters proteins with no labels
 label_filt = (sum(anno) > 0).'; 
 % removes the unlabeled proteins from the train and test sets

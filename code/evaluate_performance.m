@@ -15,6 +15,5 @@ function [acc, f1, auprc] = evaluate_performace(class_score, label)
   tab = crosstab([0;1;pred(:)],[0;1;label(:)]) - eye(2);
   f1 = 2*tab(2,2) / (2*tab(2,2)+tab(1,2)+tab(2,1));
 
-  %[~, auprc] = auc(label(:), class_score(:));
-  auprc = -1.0;
+  [~, auprc] = auc(label(:), class_score(:));
 end
