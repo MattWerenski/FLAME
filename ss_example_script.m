@@ -7,7 +7,7 @@ addpath L-BFGS-B-C/Matlab % L-BFGS package (only if svd_approx = false)
 %% Example parameters
 test_fraction = 0.8; % portion of the labelled vertices to go in the 
                     % testing set. (1 - test_fraction) is used to train
-org = 'yeast';      % use human or yeast data or random
+org = 'random';      % use human or yeast data or random
 onttype = 'level1'; % which type of annotations to use
                     %   options: {bp, mf, cc} for human GO,
                     %            {level1, level2, level3} for yeast MIPS
@@ -15,7 +15,7 @@ ontsize = [31 100];       % consider terms in a specific size range (*human GO o
                     %   examples: [11 30], [31 100], [101 300]
 svd_approx = true;  % use SVD approximation for Mashup
                     %   recommended: true for human, false for yeast
-ndim = 500;         % number of dimensions
+ndim = 10;         % number of dimensions
                     %   recommended: 800 for human, 500 for yeast
 restart_prob = 0.5; % chance that the random walk restarts itself
 walk_mode = 'unsupervised'; % determines what type of RWR to perform
@@ -87,7 +87,7 @@ ntrain = sum(train_filt);
 
 % applies the filters as masks to the annotations
 training_labels = anno.*(train_filt.');
-test_labels = anno.*(train_filt.');
+test_labels = anno.*(test_filt.');
 
 
 
@@ -109,7 +109,7 @@ end
 
 %fprintf('[Performing embedding step]\n');
 
-%{
+
 if svd_approx
   if strcmp(embedding_mode, 'unsupervised')
     x = svd_embed(walks, ndim);
@@ -125,8 +125,11 @@ else
       cannotlink_penalty, mustlink_penalty); % 3rd arg is max iterations
   end
 end
-%}
 
+run_svm(x, anno, test_filt);
+
+
+%{
 fprintf('  Performing standard MU for baseline\n');
 x_baseline = svd_embed(walks, ndim);
 run_svm(x_baseline, anno, test_filt);
@@ -146,3 +149,4 @@ for ml_idx = 1:length(ml_penalties)
     run_svm(x, anno, test_filt);
   end
 end
+%}
