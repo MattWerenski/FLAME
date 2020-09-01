@@ -6,7 +6,7 @@ function x = svd_embed(walks, ndim)
     R = log(W + 1/ngene); % smoothing
     RR_sum = RR_sum + R * R';
   end
-  clear R Q A
+  clear R Q A;
   [V, d] = eigs(RR_sum, ndim);
   x = diag(sqrt(sqrt(diag(d)))) * V';
 end

@@ -36,6 +36,5 @@ function x = svd_supervised_embed(walks, ndim, labels, ...
     end
     clear R
     [V, d] = eigs(RR_sum-LS, ndim);
-    %x = diag(sqrt(sqrt(diag(d)))) * V';
-    x = V';
+    x = diag(sqrt(sqrt(diag(d)))) * V';
 end

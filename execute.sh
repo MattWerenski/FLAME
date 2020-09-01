@@ -1,11 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=mashup_profiling
+#SBATCH --job-name=svm_test
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=mweren01@tufts.edu
 #SBATCH --ntasks=1
-#SBATCH --mem=75gb
-#SBATCH --time=08:00:00
-#SBATCH --output=logs/profile.log
+#SBATCH --mem=50gb
+#SBATCH --time=00:45:00
+#SBATCH --output=logs/full-supemb.log
 
 . ~/.bashrc
 

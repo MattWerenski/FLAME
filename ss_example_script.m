@@ -5,9 +5,9 @@ addpath libsvm-3.24/matlab % LIBSVM package (for cross_validation.m)
 addpath L-BFGS-B-C/Matlab % L-BFGS package (only if svd_approx = false)
 
 %% Example parameters
-test_fraction = 0.8; % portion of the labelled vertices to go in the 
+test_fraction = 0.2; % portion of the labelled vertices to go in the 
                     % testing set. (1 - test_fraction) is used to train
-org = 'random';      % use human or yeast data or random
+org = 'yeast';      % use human or yeast data or random
 onttype = 'level1'; % which type of annotations to use
                     %   options: {bp, mf, cc} for human GO,
                     %            {level1, level2, level3} for yeast MIPS
@@ -15,7 +15,7 @@ ontsize = [31 100];       % consider terms in a specific size range (*human GO o
                     %   examples: [11 30], [31 100], [101 300]
 svd_approx = true;  % use SVD approximation for Mashup
                     %   recommended: true for human, false for yeast
-ndim = 10;         % number of dimensions
+ndim = 500;         % number of dimensions
                     %   recommended: 800 for human, 500 for yeast
 restart_prob = 0.5; % chance that the random walk restarts itself
 walk_mode = 'unsupervised'; % determines what type of RWR to perform
@@ -29,12 +29,13 @@ embedding_mode = 'supervised'; % determines what type of embedding to do
                     % Only applies when svd_approx is set to false. Options are
                     % 'unsupervised' performs the standard optimization of mashup
                     % 'supervised' introduces penalties using the labels
-mustlink_penalty = 0.1; % in supervised embedding the amount of penalty placed
+mustlink_penalty = 0.000001; % in supervised embedding the amount of penalty placed
                     % on the mustlink constraints
-cannotlink_penalty = 0.01; % in supervised embedding the amount of penalty placed
+cannotlink_penalty = 0.000001; % in supervised embedding the amount of penalty placed
                     % on the cannot link constraints
 
-%% Construct network file paths
+% Construct network file paths
+
 string_nets = {'neighborhood', 'fusion', 'cooccurence', 'coexpression', ...
                'experimental', 'database'};
 if strcmp('random', org)
@@ -73,6 +74,7 @@ end
 fprintf('Number of functional labels: %d\n', size(anno, 1));
 
 
+
 %% Generate the training and testing sets
 fprintf('Acquiring test filter using %d testing fraction\n', test_fraction);
 [~, test_filt] = cv_partition(anno, test_fraction); 
@@ -99,6 +101,7 @@ fprintf('[SMashup]\n');
 fprintf('[Performing RWR step]\n');
 if strcmp(walk_mode, 'unsupervised')
   walks = unsupervised_rwr(network_files, ngene, restart_prob);
+  %walks = [];
 elseif strcmp(walk_mode, 'semi-supervised')
   walks = semisupervised_rwr(network_files, ngene, restart_prob, ...
     teleport_prob, training_labels);
@@ -107,11 +110,14 @@ else
     1.0, training_labels);
 end
 
-%fprintf('[Performing embedding step]\n');
+%dlmwrite('my_markov.txt', walks(,:,:)));
+%{
+fprintf('[Performing embedding step]\n');
 
 
 if svd_approx
   if strcmp(embedding_mode, 'unsupervised')
+    fprintf('Unsupervised Embedding');
     x = svd_embed(walks, ndim);
   else
     x = svd_supervised_embed(walks, ndim, training_labels, ... 
@@ -125,17 +131,23 @@ else
       cannotlink_penalty, mustlink_penalty); % 3rd arg is max iterations
   end
 end
+%}
+%dlmwrite('s_500_svd.txt', x);
 
-run_svm(x, anno, test_filt);
+%}
+
+%run_svm(x, anno, test_filt);
 
 
-%{
+
 fprintf('  Performing standard MU for baseline\n');
 x_baseline = svd_embed(walks, ndim);
+%x_baseline = dlmread('yeast_500_svd.txt');
 run_svm(x_baseline, anno, test_filt);
 
+
 fprintf('  Performing hyper-parameter search\n');
-ml_penalties = [0.0001 0.001 0.01 0.1 1 10 100];
+ml_penalties = [0.00001 0.0001 0.001 0.01 0.1 1 10];
 cl_penalties = [0.00001 0.0001 0.001 0.01 0.1 1 10];
 
 for ml_idx = 1:length(ml_penalties)
@@ -149,4 +161,4 @@ for ml_idx = 1:length(ml_penalties)
     run_svm(x, anno, test_filt);
   end
 end
-%}
+
