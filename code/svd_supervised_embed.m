@@ -11,12 +11,12 @@ function x = svd_supervised_embed(walks, ndim, labels, ...
     n_cl = sum(sum(cl))/2;
     % normally we don't need this check but for debugging I have it
     if n_ml > 0
-        ml = (ml_penalty/(n_ml*n_ml)) * ml;
+        ml = ml_penalty * ml;
     else
         ml = zeros(ngene);
     end
     if n_cl > 0
-        cl = (cl_penalty/(n_cl*n_cl)) * cl;
+        cl = cl_penalty * cl;
     else
         cl = zeros(ngene);
     end
@@ -35,6 +35,6 @@ function x = svd_supervised_embed(walks, ndim, labels, ...
         RR_sum = RR_sum + R * R';
     end
     clear R
-    [V, d] = eigs(RR_sum-LS, ndim);
+    [V, d] = eigs(RR_sum + LS, ndim);
     x = diag(sqrt(sqrt(diag(d)))) * V';
 end

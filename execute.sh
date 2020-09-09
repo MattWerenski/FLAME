@@ -1,11 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=svm_test
+#SBATCH --job-name=link-testing
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=mweren01@tufts.edu
 #SBATCH --ntasks=1
-#SBATCH --mem=50gb
-#SBATCH --time=00:45:00
-#SBATCH --output=logs/full-supemb.log
+#SBATCH --mem=100gb
+#SBATCH --time=04:00:00
+#SBATCH --output=logs/aggressive-link.log
 
 . ~/.bashrc
 

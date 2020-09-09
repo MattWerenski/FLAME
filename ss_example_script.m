@@ -29,9 +29,9 @@ embedding_mode = 'supervised'; % determines what type of embedding to do
                     % Only applies when svd_approx is set to false. Options are
                     % 'unsupervised' performs the standard optimization of mashup
                     % 'supervised' introduces penalties using the labels
-mustlink_penalty = 0.000001; % in supervised embedding the amount of penalty placed
+mustlink_penalty = 100; % in supervised embedding the amount of penalty placed
                     % on the mustlink constraints
-cannotlink_penalty = 0.000001; % in supervised embedding the amount of penalty placed
+cannotlink_penalty = 10; % in supervised embedding the amount of penalty placed
                     % on the cannot link constraints
 
 % Construct network file paths
@@ -131,7 +131,7 @@ else
       cannotlink_penalty, mustlink_penalty); % 3rd arg is max iterations
   end
 end
-%}
+
 %dlmwrite('s_500_svd.txt', x);
 
 %}
@@ -140,15 +140,16 @@ end
 
 
 
+
 fprintf('  Performing standard MU for baseline\n');
 x_baseline = svd_embed(walks, ndim);
-%x_baseline = dlmread('yeast_500_svd.txt');
+% x_baseline = dlmread('yeast_500_svd.txt');
 run_svm(x_baseline, anno, test_filt);
 
 
 fprintf('  Performing hyper-parameter search\n');
-ml_penalties = [0.00001 0.0001 0.001 0.01 0.1 1 10];
-cl_penalties = [0.00001 0.0001 0.001 0.01 0.1 1 10];
+ml_penalties = [1, 5, 25, 125, 625, 1000];
+cl_penalties = [1, 5, 25, 125, 625, 1000];
 
 for ml_idx = 1:length(ml_penalties)
   for cl_idx = 1:length(cl_penalties)
