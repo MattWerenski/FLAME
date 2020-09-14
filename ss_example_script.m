@@ -15,6 +15,7 @@ ontsize = [31 100];       % consider terms in a specific size range (*human GO o
                     %   examples: [11 30], [31 100], [101 300]
 svd_approx = true;  % use SVD approximation for Mashup
                     %   recommended: true for human, false for yeast
+svd_full = true;
 ndim = 500;         % number of dimensions
                     %   recommended: 800 for human, 500 for yeast
 restart_prob = 0.5; % chance that the random walk restarts itself
@@ -29,9 +30,9 @@ embedding_mode = 'supervised'; % determines what type of embedding to do
                     % Only applies when svd_approx is set to false. Options are
                     % 'unsupervised' performs the standard optimization of mashup
                     % 'supervised' introduces penalties using the labels
-mustlink_penalty = 100; % in supervised embedding the amount of penalty placed
+mustlink_penalty = 0.001; % in supervised embedding the amount of penalty placed
                     % on the mustlink constraints
-cannotlink_penalty = 10; % in supervised embedding the amount of penalty placed
+cannotlink_penalty = 0; % in supervised embedding the amount of penalty placed
                     % on the cannot link constraints
 
 % Construct network file paths
@@ -110,8 +111,6 @@ else
     1.0, training_labels);
 end
 
-%dlmwrite('my_markov.txt', walks(,:,:)));
-%{
 fprintf('[Performing embedding step]\n');
 
 
@@ -120,8 +119,13 @@ if svd_approx
     fprintf('Unsupervised Embedding');
     x = svd_embed(walks, ndim);
   else
-    x = svd_supervised_embed(walks, ndim, training_labels, ... 
-      cannotlink_penalty, mustlink_penalty); 
+    if svd_full
+       x = svd_full_embed(walks, ndim, training_labels, ... 
+         cannotlink_penalty, mustlink_penalty); 
+    else
+      x = svd_supervised_embed(walks, ndim, training_labels, ... 
+        cannotlink_penalty, mustlink_penalty); 
+    end
   end
 else
   if strcmp(embedding_mode, 'unsupervised')
@@ -132,15 +136,19 @@ else
   end
 end
 
-%dlmwrite('s_500_svd.txt', x);
 
-%}
+x_base = svd_embed(walks, ndim);
 
-%run_svm(x, anno, test_filt);
+fprintf('[Perfoming our version]');
+
+run_svm(x, anno, test_filt);
+
+fprintf('[Performing baseline version]');
+
+run_svm(x_base, anno, test_filt);
 
 
-
-
+%{
 fprintf('  Performing standard MU for baseline\n');
 x_baseline = svd_embed(walks, ndim);
 % x_baseline = dlmread('yeast_500_svd.txt');
@@ -163,3 +171,4 @@ for ml_idx = 1:length(ml_penalties)
   end
 end
 
+%}

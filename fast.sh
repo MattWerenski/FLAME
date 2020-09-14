@@ -1,11 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=full-embed
+#SBATCH --job-name=full-quick
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=mweren01@tufts.edu
 #SBATCH --ntasks=1
-#SBATCH --mem=100gb
-#SBATCH --time=04:00:00
-#SBATCH --output=logs/full-embed.log
+#SBATCH --mem=60gb
+#SBATCH --time=02:00:00
+#SBATCH --output=logs/no-cl.log
 
 . ~/.bashrc
 

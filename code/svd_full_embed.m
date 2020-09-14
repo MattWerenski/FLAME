@@ -3,13 +3,19 @@ function x = svd_full_embed(walks, ndim, labels, ...
 
     [nnetworks, ngene, ~] = size(walks);
     
+    [l1, l2] = size(labels);
+    rf = rand(l1,l2) > 0.95; % use 1-p fraction of the labels
+    filtered_labels = (rf .* labels) > 0;
+    
+
     % create the must-link and cannot-link matrices (0s and 1s)
-    ml = mustlink(labels);
-    cl = cannotlink(ml, labels);
-    % normally we don't need this check but for debugging I have it
+    ml = mustlink(filtered_labels);
+    cl = cannotlink(ml, filtered_labels);
+
     ml = ml_penalty * ml;
     cl = cl_penalty * cl;
     
+
     % creates the combined constraint matrix
     constraints = ml - cl;
     nz = nnz(constraints);
@@ -20,7 +26,7 @@ function x = svd_full_embed(walks, ndim, labels, ...
     % reshapes the walks so that they are stacked into a very tall matrix
     % the first ngene rows correspond to the first network, rows ngene+1 to 2*ngene
     % are for the second network and so on
-    Wfull = reshape(permute(W, [3, 1, 2]), nnetworks * ngene, ngene);
+    Wfull = reshape(permute(walks, [3, 1, 2]), nnetworks * ngene, ngene);
 
     % stacks nnetworks copies of the constraints. The output matrix has
     % nnetworks * ngene rows and ngene columns.
