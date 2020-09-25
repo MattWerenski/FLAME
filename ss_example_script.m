@@ -15,7 +15,7 @@ ontsize = [31 100];       % consider terms in a specific size range (*human GO o
                     %   examples: [11 30], [31 100], [101 300]
 svd_approx = true;  % use SVD approximation for Mashup
                     %   recommended: true for human, false for yeast
-svd_full = true;
+svd_full = false;
 ndim = 500;         % number of dimensions
                     %   recommended: 800 for human, 500 for yeast
 restart_prob = 0.5; % chance that the random walk restarts itself
@@ -30,7 +30,7 @@ embedding_mode = 'supervised'; % determines what type of embedding to do
                     % Only applies when svd_approx is set to false. Options are
                     % 'unsupervised' performs the standard optimization of mashup
                     % 'supervised' introduces penalties using the labels
-mustlink_penalty = 0.001; % in supervised embedding the amount of penalty placed
+mustlink_penalty = 500000; % in supervised embedding the amount of penalty placed
                     % on the mustlink constraints
 cannotlink_penalty = 0; % in supervised embedding the amount of penalty placed
                     % on the cannot link constraints
