@@ -146,29 +146,3 @@ run_svm(x, anno, test_filt);
 fprintf('[Performing baseline version]');
 
 run_svm(x_base, anno, test_filt);
-
-
-%{
-fprintf('  Performing standard MU for baseline\n');
-x_baseline = svd_embed(walks, ndim);
-% x_baseline = dlmread('yeast_500_svd.txt');
-run_svm(x_baseline, anno, test_filt);
-
-
-fprintf('  Performing hyper-parameter search\n');
-ml_penalties = [1, 5, 25, 125, 625, 1000];
-cl_penalties = [1, 5, 25, 125, 625, 1000];
-
-for ml_idx = 1:length(ml_penalties)
-  for cl_idx = 1:length(cl_penalties)
-    mustlink_penalty = ml_penalties(ml_idx);
-    cannotlink_penalty = cl_penalties(cl_idx);
-
-    fprintf('ML = %f CL = %f\n', mustlink_penalty, cannotlink_penalty);
-    x = svd_supervised_embed(walks, ndim, training_labels, ... 
-      cannotlink_penalty, mustlink_penalty); 
-    run_svm(x, anno, test_filt);
-  end
-end
-
-%}
