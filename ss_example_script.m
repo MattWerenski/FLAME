@@ -4,6 +4,12 @@ addpath code
 addpath libsvm-3.24/matlab % LIBSVM package (for cross_validation.m)
 addpath L-BFGS-B-C/Matlab % L-BFGS package (only if svd_approx = false)
 
+% clear;clc;
+% addpath(genpath('code'));
+% addpath(genpath('data'));
+% %addpath(genpath('lbfgsb'));
+% addpath(genpath('libsvm'));
+
 %% Example parameters
 test_fraction = 0.2; % portion of the labelled vertices to go in the 
                     % testing set. (1 - test_fraction) is used to train
@@ -30,7 +36,7 @@ embedding_mode = 'supervised'; % determines what type of embedding to do
                     % Only applies when svd_approx is set to false. Options are
                     % 'unsupervised' performs the standard optimization of mashup
                     % 'supervised' introduces penalties using the labels
-mustlink_penalty = 500000; % in supervised embedding the amount of penalty placed
+mustlink_penalty = 1; % in supervised embedding the amount of penalty placed
                     % on the mustlink constraints
 cannotlink_penalty = 0; % in supervised embedding the amount of penalty placed
                     % on the cannot link constraints
@@ -113,6 +119,9 @@ end
 
 fprintf('[Performing embedding step]\n');
 
+mladj = get_constraints_as_graph(walks,training_labels, mustlink_penalty);
+T = table(mladj);
+writetable(T,'yeast_string_constraints_adjacency.txt')
 
 if svd_approx
   if strcmp(embedding_mode, 'unsupervised')
