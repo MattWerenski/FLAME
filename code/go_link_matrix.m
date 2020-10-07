@@ -1,0 +1,27 @@
+function [link_mat] = go_link_matrix(path, ngene, filter)
+    [i1, i2, levels] = textread(path, '%d%d%d');
+    
+    % write the rules here for how much weight at each level
+    weights = zeros(1, length(levels));
+    
+    weights(weights <= 5) = 0;
+    weights(weights == 6) = 0.25;
+    weights(wieghts == 7) = 0.5;
+    weights(weights == 8) = 0.75;
+    weights(weights >= 9) = 1;
+    
+    inuse = weights > 0;
+    
+    % save the work and prune the unused weights
+    i1 = i1(inuse);
+    i2 = i2(inuse);
+    levels = levels(inuse);
+    
+    % create the sparse matrix of weights
+    link_mat = sparse(i1,i2,levels,ngene,ngene);
+    
+    % filter out the links involving data in the test set
+    link_mat(filter, :) = 0;
+    link_mat(:, filter) = 0;
+end
+

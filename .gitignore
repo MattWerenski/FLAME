@@ -3,5 +3,7 @@ L-BFGS-B-C
 libsvm-3.24
 data/**
 logs/**
+GO_links/**
+GOlabels/**
 testdata/**
 **/.DS_Store
