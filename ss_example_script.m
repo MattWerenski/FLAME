@@ -13,16 +13,19 @@ addpath L-BFGS-B-C/Matlab % L-BFGS package (only if svd_approx = false)
 %% Example parameters
 test_fraction = 0.2; % portion of the labelled vertices to go in the 
                     % testing set. (1 - test_fraction) is used to train
-org = 'yeast';      % use human or yeast data or random
-onttype = 'level1'; % which type of annotations to use
+org = 'human';      % use human or yeast data or random
+onttype = 'bp'; % which type of annotations to use
                     %   options: {bp, mf, cc} for human GO,
                     %            {level1, level2, level3} for yeast MIPS
 ontsize = [31 100];       % consider terms in a specific size range (*human GO only*)
                     %   examples: [11 30], [31 100], [101 300]
 svd_approx = true;  % use SVD approximation for Mashup
                     %   recommended: true for human, false for yeast
-svd_full = false;
-ndim = 500;         % number of dimensions
+svd_full = false;   % whether to stack the matrics really tall for svd or use the
+                    % log transofrm and sum
+use_go_link = true; % when using go, whether or not to append the extra link matrix
+                    % generated from the labels
+ndim = 800;         % number of dimensions
                     %   recommended: 800 for human, 500 for yeast
 restart_prob = 0.5; % chance that the random walk restarts itself
 walk_mode = 'unsupervised'; % determines what type of RWR to perform
@@ -32,7 +35,7 @@ walk_mode = 'unsupervised'; % determines what type of RWR to perform
 teleport_prob= 0.5; % only uses in semi-supervised walk mode. The chance that
                     % the chance that a walk entering a labeled vertex jumps to
                     % another vertex with that label instead of doing the normal walk
-embedding_mode = 'supervised'; % determines what type of embedding to do
+embedding_mode = 'unsupervised'; % determines what type of embedding to do
                     % Only applies when svd_approx is set to false. Options are
                     % 'unsupervised' performs the standard optimization of mashup
                     % 'supervised' introduces penalties using the labels
@@ -117,11 +120,22 @@ else
     1.0, training_labels);
 end
 
-fprintf('[Performing embedding step]\n');
+%% Getting the base to compare against
+x_base = svd_embed(walks, ndim);
 
-mladj = get_constraints_as_graph(walks,training_labels, mustlink_penalty);
-T = table(mladj);
-writetable(T,'yeast_string_constraints_adjacency.txt')
+%% Adding the extra matrix of constraints
+
+if strcmp(org, human) && use_go_link
+  fprintf('[Adding Constraint Matrix]')
+  sparse_link = go_link_matrix(pat, ngene, train_filt);
+  dense_link = full(sparse_link);
+  link_markov = markov_mat(dense_link);
+  link_walk = rwr(link_markov, restart_prob);
+  link_walk = reshape(link_walk, 1,ngene,ngene); % add an extra index for appending
+  walks = cat(1, walks, link_walk); % tacks the extra walk onto the end
+end
+
+fprintf('[Performing embedding step]\n');
 
 if svd_approx
   if strcmp(embedding_mode, 'unsupervised')
@@ -130,7 +144,7 @@ if svd_approx
   else
     if svd_full
        x = svd_full_embed(walks, ndim, training_labels, ... 
-         cannotlink_penalty, mustlink_penalty); 
+         cannotlink_penalty, mustlink_penalty);  
     else
       x = svd_supervised_embed(walks, ndim, training_labels, ... 
         cannotlink_penalty, mustlink_penalty); 
@@ -144,9 +158,6 @@ else
       cannotlink_penalty, mustlink_penalty); % 3rd arg is max iterations
   end
 end
-
-
-x_base = svd_embed(walks, ndim);
 
 fprintf('[Perfoming our version]');
 

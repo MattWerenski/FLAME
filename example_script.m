@@ -1,12 +1,12 @@
 addpath code
 
 %% Required external dependencies: see README.txt for more information
-addpath ../libsvm-3.24/matlab % LIBSVM package (for cross_validation.m)
-addpath ../L-BFGS-B-C/Matlab % L-BFGS package (only if svd_approx = false)
+%addpath ../libsvm-3.24/matlab % LIBSVM package (for cross_validation.m)
+%addpath ../L-BFGS-B-C/Matlab % L-BFGS package (only if svd_approx = false)
 
 %% Example parameters
-org = 'yeast';      % use human or yeast data
-onttype = 'level1'; % which type of annotations to use
+org = 'human';      % use human or yeast data
+onttype = 'bp'; % which type of annotations to use
                     %   options: {bp, mf, cc} for human GO,
                     %            {level1, level2, level3} for yeast MIPS
 ontsize = [101 300];       % consider terms in a specific size range (*human GO only*)
@@ -20,11 +20,11 @@ ndim = 500;         % number of dimensions
 %% Construct network file paths 
 string_nets = {'neighborhood', 'fusion', 'cooccurence', 'coexpression', ...
                'experimental', 'database'};
-%network_files = cell(1, length(string_nets));
-%for i = 1:length(string_nets)
-%  network_files{i} = sprintf('data/networks/%s/%s_string_%s_adjacency.txt', ...
-%                             org, org, string_nets{i});
-%end
+network_files = cell(1, length(string_nets));
+for i = 1:length(string_nets)
+  network_files{i} = sprintf('data/networks/%s/%s_string_%s_adjacency.txt', ...
+                             org, org, string_nets{i});
+end
 
 %% Load gene list
 gene_file = sprintf('data/networks/%s/%s_string_genes.txt', org, org);
