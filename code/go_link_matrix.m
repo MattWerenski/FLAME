@@ -4,11 +4,17 @@ function [link_mat] = go_link_matrix(path, ngene, filter)
     % write the rules here for how much weight at each level
     weights = zeros(1, length(levels));
     
-    weights(weights <= 5) = 0;
-    weights(weights == 6) = 0.25;
-    weights(wieghts == 7) = 0.5;
-    weights(weights == 8) = 0.75;
-    weights(weights >= 9) = 1;
+%     weights(weights <= 5) = 0;
+%     weights(weights == 6) = 0.25;
+%     weights(wieghts == 7) = 0.5;
+%     weights(weights == 8) = 0.75;
+%     weights(weights >= 9) = 1;
+    
+    weights(levels <= 5) = 0;
+    weights(levels == 6) = 0.25;
+    weights(levels == 7) = 0.5;
+    weights(levels == 8) = 0.75;
+    weights(levels >= 9) = 1;
     
     inuse = weights > 0;
     
@@ -18,7 +24,8 @@ function [link_mat] = go_link_matrix(path, ngene, filter)
     levels = levels(inuse);
     
     % create the sparse matrix of weights
-    link_mat = sparse(i1,i2,levels,ngene,ngene);
+    %link_mat = sparse(i1,i2,levels,ngene,ngene);
+    link_mat = sparse(i1,i2,weights,ngene,ngene);
     
     % filter out the links involving data in the test set
     link_mat(filter, :) = 0;
