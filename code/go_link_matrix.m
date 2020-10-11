@@ -21,7 +21,7 @@ function [link_mat] = go_link_matrix(path, ngene, filter)
     % save the work and prune the unused weights
     i1 = i1(inuse);
     i2 = i2(inuse);
-    levels = levels(inuse);
+    weights = weights(inuse);
     
     % create the sparse matrix of weights
     %link_mat = sparse(i1,i2,levels,ngene,ngene);
