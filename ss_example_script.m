@@ -121,13 +121,13 @@ else
 end
 
 %% Getting the base to compare against
-x_base = svd_embed(walks, ndim);
+%x_base = svd_embed(walks, ndim);
 
 %% Adding the extra matrix of constraints
 
-if strcmp(org, human) && use_go_link
+if strcmp(org, 'human') && use_go_link
   fprintf('[Adding Constraint Matrix]')
-  sparse_link = go_link_matrix(pat, ngene, train_filt);
+  sparse_link = go_link_matrix('data/total-index.txt', ngene, train_filt);
   dense_link = full(sparse_link);
   link_markov = markov_mat(dense_link);
   link_walk = rwr(link_markov, restart_prob);
@@ -163,6 +163,6 @@ fprintf('[Perfoming our version]');
 
 run_svm(x, anno, test_filt);
 
-fprintf('[Performing baseline version]');
+%fprintf('[Performing baseline version]');
 
-run_svm(x_base, anno, test_filt);
+%run_svm(x_base, anno, test_filt);
