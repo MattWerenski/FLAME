@@ -5,7 +5,7 @@
 #SBATCH --ntasks=1
 #SBATCH --mem=100gb
 #SBATCH --time=04:00:00
-#SBATCH --output=logs/full-embed.log
+#SBATCH --output=logs/go-test2.log
 
 . ~/.bashrc
 
