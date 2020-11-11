@@ -1,16 +1,18 @@
-addpath code
-
+% addpath code
+% 
 %% Required external dependencies: see README.txt for more information
 addpath libsvm-3.24/matlab % LIBSVM package (for cross_validation.m)
 addpath L-BFGS-B-C/Matlab % L-BFGS package (only if svd_approx = false)
 
-%addpath PATH_TO_MTBA 
+addpath PATH_TO_MTBA 
 
 % clear;clc;
 % addpath(genpath('code'));
 % addpath(genpath('data'));
 % %addpath(genpath('lbfgsb'));
 % addpath(genpath('libsvm'));
+% addpath(genpath('mtba'));
+
 
 %% Example parameters
 test_fraction = 0.2; % portion of the labelled vertices to go in the 
@@ -30,7 +32,7 @@ use_go_link = true; % when using go, whether or not to append the extra link mat
 ndim = 800;         % number of dimensions
                     %   recommended: 800 for human, 500 for yeast
 restart_prob = 0.5; % chance that the random walk restarts itself
-walk_mode = 'unsupervised'; % determines what type of RWR to perform
+walk_mode = 'semi-supervised'; % determines what type of RWR to perform
                     % 'unsupervised' is the default in mashup
                     % 'semi-supervised' uses "class teleportation" allowing escape
                     % 'supervised' uses class teleportation without escape
@@ -45,6 +47,7 @@ mustlink_penalty = 1; % in supervised embedding the amount of penalty placed
                     % on the mustlink constraints
 cannotlink_penalty = 0; % in supervised embedding the amount of penalty placed
                     % on the cannot link constraints
+ext_edge_weight = 0.1;
 
 % Construct network file paths
 
@@ -108,42 +111,76 @@ test_labels = anno.*(test_filt.');
 %% SMashup integration
 fprintf('[SMashup]\n');
 
-%{
+
 
 fprintf('[Performing Biclustering]')
 num_clusters = 8
-clusters_data = spectralCoClustering(anno(test_filt, :), num_clusters, 0);
+clusters_data = spectralCoClustering(anno(:,train_filt), num_clusters, 0);
 % check this to make sure filtering is done correctly
-gene_clusters = clusters_data.NumxCol % Could be RowxNum if the matrix is
+gene_clusters = clusters_data.NumxCol; % Could be RowxNum if the matrix is
                                       % transposed of what I'm guessing
-
+label_clusters = clusters_data.RowxNum;
 % gene clusters should be a (num_clusters)x(num training genes) matrix
 % where each row corresponds to a cluster and the entries are
 % an indicator for a gene belonging to that cluster.
-%}
 
-%% Performs the specified variant of RWR
 
-fprintf('[Performing RWR step]\n');
-if strcmp(walk_mode, 'unsupervised')
-  walks = unsupervised_rwr(network_files, ngene, restart_prob);
-  %walks = [];
-elseif strcmp(walk_mode, 'semi-supervised')
-  walks = semisupervised_rwr(network_files, ngene, restart_prob, ...
-    teleport_prob, training_labels);
-else
-  walks = semisupervised_rwr(network_files, ngene, restart_prob, ...
-    1.0, training_labels);
+%----------------------
+% add dummy nodes that connect to all nodes in its corresponding gene
+% cluster
+
+% write semisupervised random walk with dummy nodes function
+
+mkdir('augmented_data');
+addpath(genpath('augmented_data'));
+
+aug_network_files = cell(1, length(string_nets));
+
+for i=1:length(string_nets)
+    copyfile(network_files{i}, 'augmented_data', 'f');
+    aug_network_files{i} = sprintf('augmented_data/%s_string_%s_adjacency.txt', ...
+                              org, string_nets{i}); 
 end
 
-%% Getting the base to compare against
-x_base = svd_embed(walks, ndim);
+ 
+for i = 1:num_clusters
+    ext_edge= find(gene_clusters(i,:))';
+    ext_adj = horzcat((ngene+i)*ones(size(ext_edge)),ext_edge, ext_edge_weight*ones(size(ext_edge)));
+    for j = 1:length(string_nets)
+        dlmwrite(aug_network_files{j},ext_adj,'delimiter',' ','-append')
+    end
+end
+ 
+% augment training set filter and training labels
+train_filt = logical([train_filt; ones(num_clusters,1)]);
+training_labels = [training_labels, label_clusters];
 
-%% Adding the extra matrix of constraints
+%------------------------
+% add dummy nodes that connect to all nodes that have labels in the 
+% corresponding label cluster
 
-if strcmp(org, human) && use_go_link
+%% Performs the specified variant of RWR
+fprintf('[Performing RWR step]\n');
+walks = semisupervised_rwr(aug_network_files, ngene+num_clusters, restart_prob, ...
+    teleport_prob, training_labels);
+
+
+% if strcmp(walk_mode, 'unsupervised')
+%   walks = unsupervised_rwr(network_files, ngene, restart_prob);
+%   %walks = [];
+% elseif strcmp(walk_mode, 'semi-supervised')
+%   walks = semisupervised_rwr(network_files, ngene, restart_prob, ...
+%     teleport_prob, training_labels);
+% else
+%   walks = semisupervised_rwr(network_files, ngene, restart_prob, ...
+%     1.0, training_labels);
+% end
+
+%% get constraint graph
+path = 'data/networks/human/total-index.txt';
+if strcmp(org, 'human') && use_go_link
   fprintf('[Adding Constraint Matrix]')
-  sparse_link = go_link_matrix(pat, ngene, train_filt);
+  sparse_link = go_link_matrix(path, ngene, train_filt);
   dense_link = full(sparse_link);
   link_markov = markov_mat(dense_link);
   link_walk = rwr(link_markov, restart_prob);
@@ -151,34 +188,43 @@ if strcmp(org, human) && use_go_link
   walks = cat(1, walks, link_walk); % tacks the extra walk onto the end
 end
 
+%% embedding
 fprintf('[Performing embedding step]\n');
+%x_base = svd_embed(walks, ndim);
 
-if svd_approx
-  if strcmp(embedding_mode, 'unsupervised')
-    fprintf('Unsupervised Embedding');
-    x = svd_embed(walks, ndim);
-  else
-    if svd_full
-       x = svd_full_embed(walks, ndim, training_labels, ... 
-         cannotlink_penalty, mustlink_penalty);  
-    else
-      x = svd_supervised_embed(walks, ndim, training_labels, ... 
-        cannotlink_penalty, mustlink_penalty); 
-    end
-  end
-else
-  if strcmp(embedding_mode, 'unsupervised')
-    x = unsupervised_embed(walks, ndim, 1000); % 3rd arg is max iterations
-  else
-    x = supervised_embed(walks, ndim, 1000, training_labels, ... 
-      cannotlink_penalty, mustlink_penalty); % 3rd arg is max iterations
-  end
-end
+x = svd_supervised_embed_cluster_nodes(walks, ndim, num_clusters, training_labels, ... 
+    mustlink_penalty);
 
+% if svd_approx
+%   if strcmp(embedding_mode, 'unsupervised')
+%     fprintf('Unsupervised Embedding');
+%     x = svd_embed(walks, ndim);
+%   else
+%     if svd_full
+%        x = svd_full_embed(walks, ndim, training_labels, ... 
+%          cannotlink_penalty, mustlink_penalty);  
+%     else
+%       x = svd_supervised_embed(walks, ndim, training_labels, ... 
+%         cannotlink_penalty, mustlink_penalty); 
+%     end
+%   end
+% else
+%   if strcmp(embedding_mode, 'unsupervised')
+%     x = unsupervised_embed(walks, ndim, 1000); % 3rd arg is max iterations
+%   else
+%     x = supervised_embed(walks, ndim, 1000, training_labels, ... 
+%       cannotlink_penalty, mustlink_penalty); % 3rd arg is max iterations
+%   end
+% end
+
+%% function prediction with SVM
 fprintf('[Perfoming our version]');
 
 run_svm(x, anno, test_filt);
 
-fprintf('[Performing baseline version]');
+%fprintf('[Performing baseline version]');
 
-run_svm(x_base, anno, test_filt);
+%run_svm(x_base, anno, test_filt);
+
+
+ 
