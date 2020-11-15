@@ -1,4 +1,5 @@
 .ipynb_checkpoints
+python/figures/**
 L-BFGS-B-C
 libsvm-3.24
 data/**
@@ -7,3 +8,6 @@ GO_links/**
 GOlabels/**
 testdata/**
 **/.DS_Store
+mtba.zip
+mtba-nix/**
+mtba-win/**

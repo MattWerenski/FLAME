@@ -1,4 +1,5 @@
 function [acc, f1, aupr] = run_svm(x, anno, test_filt)
+    addpath code/evaluate;
     % Parameters
     gvec = -3:1:0;
     cvec = -2:1:2;

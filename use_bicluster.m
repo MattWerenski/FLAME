@@ -114,7 +114,7 @@ fprintf('[SMashup]\n');
 
 
 fprintf('[Performing Biclustering]')
-num_clusters = 8
+num_clusters = 8;
 clusters_data = spectralCoClustering(anno(:,train_filt), num_clusters, 0);
 % check this to make sure filtering is done correctly
 gene_clusters = clusters_data.NumxCol; % Could be RowxNum if the matrix is

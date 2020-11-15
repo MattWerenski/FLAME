@@ -1,4 +1,7 @@
 function [link_mat] = go_link_matrix(path, ngene, filter)
+
+    disp(path);
+
     [i1, i2, levels] = textread(path, '%d%d%d');
     
     % write the rules here for how much weight at each level

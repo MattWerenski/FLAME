@@ -3,10 +3,10 @@
 %% ontsize (optional): [min_size max_size], only return terms within a size range
 %% no_overlap (optional): remove redundant terms
 %%
-function anno = load_go(gotype, genes, ontsize, no_overlap)
-  prefix = 'go_human_ref';
+function anno = load_go(org, gotype, genes, ontsize, no_overlap)
+  prefix = sprintf('go_%s_ref', org);
   
-  go_path = 'data/annotations/human';
+  go_path = sprintf('data/annotations/%s', org);
   gogene = textread(sprintf('%s/%s_genes.txt', go_path, prefix), '%s');
   filt = ismember(genes, gogene);
   
@@ -32,8 +32,8 @@ function anno = load_go(gotype, genes, ontsize, no_overlap)
   ontgraph = sparse(M(:,1), M(:,2), true, nterm, nterm);
   reachable = get_reachable(ontgraph);
   
-  goind = cell2mat(values(m, goterm));
-  anno = (reachable(:,goind) * anno) > 0; % propagate
+  goind = cell2mat(values(m, goterm(isKey(m, goterm))));
+  anno = (reachable(:,goind) * anno(isKey(m, goterm), :)) > 0; % propagate
   anno = anno(sum(anno, 2) > 0,:);
 
   %% Select terms in the given size range
