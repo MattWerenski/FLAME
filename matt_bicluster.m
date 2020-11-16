@@ -59,12 +59,12 @@ options.test_fraction = 0.2;
                     
 
 %% Construct network file paths
-string_nets = {'neighborhood'};%, 'fusion', 'cooccurence', 'coexpression', ...
-               %'experimental', 'database'};
+string_nets = {'neighborhood', 'fusion', 'cooccurence', 'coexpression', ...
+               'experimental', 'database'};
 network_files = cell(1, length(string_nets));
 for i = 1:length(string_nets)
      network_files{i} = sprintf('data/networks/%s/%s_string_%s_adjacency.txt', ...
-         org, org, string_nets{i}); 
+         options.org, options.org, string_nets{i}); 
 end
 
 %% Load gene list
