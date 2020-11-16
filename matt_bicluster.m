@@ -2,7 +2,7 @@ addpath mtba-nix/mtba-nix/mtba-nix/mtba;
 addpath libsvm-3.24/matlab; % LIBSVM package (for cross_validation.m)
 addpath L-BFGS-B-C/Matlab; % L-BFGS package (only if svd_approx = false)
 addpath code;
-
+addpath code/embed;
 %% Example parameters
 
 % use human or yeast data
@@ -91,8 +91,14 @@ fprintf('[Performing embedding step]\n');
 x = compute_embedding(walks, gene_clusters, options);
 
 %% Use the embedding with SVMs
-fprintf('[Perfoming our version]');
+fprintf('[Perfoming our version]\n');
 run_svm(x, anno, test_filt);
 
-
-
+%% Performs the base Mashup for comparison
+fprintf('[Performing base version]\n');
+if options.walk.use_go_link
+    x_base = svd_embed(walks(1:end-1,:,:), options.embedding.ndim);
+else
+    x_base = svd_embed(walks, options.embedding.ndim);
+end
+run_svm(x_base, anno, test_filt);

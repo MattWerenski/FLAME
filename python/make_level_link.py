@@ -1,23 +1,29 @@
+# organism being used
+org = 'yeast'
+
+# go tree being used
+ont = 'mf'
+
 # path to the list of string genes
-string_gene_filepath = "data/networks/human/human_string_genes.txt"
+string_gene_filepath = f'data/networks/{org}/{org}_string_genes.txt'
 
 # path to the list of go genes
-go_gene_filepath     = "data/annotations/human/go_human_ref_genes.txt"
+go_gene_filepath     = f'data/annotations/{org}/go_{org}_ref_genes.txt'
 # path to the list of go terms
-go_term_filepath     = "data/annotations/human/go_human_ref_bp_terms.txt"
+go_term_filepath     = f'data/annotations/{org}/go_{org}_ref_{ont}_terms.txt'
 # path to a list of genes-go term pairs
-go_adj_filepath      = "data/annotations/human/go_human_ref_bp_adjacency.txt"
+go_adj_filepath      = f'data/annotations/{org}/go_{org}_ref_{ont}_adjacency.txt'
 
 # path to a file that maps go terms to an index
-go_term_map_filepath = "data/annotations/human/graph/go_bp.map"
+go_term_map_filepath = f'data/annotations/{org}/graph/go_{ont}.map'
 # path to the a file containing the structure of GO
-go_dag_filepath      = "data/annotations/human/graph/go_bp.links"
+go_dag_filepath      = f'data/annotations/{org}/graph/go_{ont}.links'
 
-# lowest level to include in the data sets (don't go below 5)
+# lowest level to include in the data sets (h.bp - 5, h.mf - 8, y.mf - )
 min_level            = 5
 
 # where to output the dataset to
-location             = 'data/GO_links'
+location             = f'data/annotations/{org}'
 
 # whether to create files for each level's gene pairs
 create_individual    = False
@@ -28,7 +34,7 @@ create_total         = True
 
 # reads in the list of string genes
 file_gene_list = open(string_gene_filepath, 'r')
-string_genes = []
+string_genes = [None]
 for gene_line in file_gene_list.readlines():
     gene = gene_line.split()[0]
     string_genes.append(gene)
@@ -36,7 +42,7 @@ file_gene_list.close()
 
 # reads the list of GO genes in
 file_go_gene_list = open(go_gene_filepath, 'r')
-go_genes = []
+go_genes = [None]
 for gene_line in file_go_gene_list.readlines():
     gene = gene_line.split()[0]
     go_genes.append(gene)
@@ -266,8 +272,8 @@ for working_level in range(max_level, min_level-1, -1):
 # creates lists of genes for each separate level of GO
 if create_individual:
     for level in range(max_level, min_level-1, -1):
-        file_index = open(f'{location}/level-{level}-index.txt','w')
-        file_gene = open(f'{location}/level-{level}-gene.txt','w')
+        file_index = open(f'{location}/{ont}-level-{level}-index.txt','w')
+        file_gene = open(f'{location}/{ont}-level-{level}-gene.txt','w')
 
         for pair in matchings[level - 1]:
             [index1, index2] = pair.split('-')
@@ -287,12 +293,17 @@ if create_individual:
         file_gene.close()
 
 # compiles all the genes that are linked into a single file
+for i in range(max_level):
+    print(f'level: {i+1} - matches: {len(matchings[i])}')
+print('--------')
+
 if create_total:
-    file_index = open(f'{location}/total-index.txt','w')
-    file_gene = open(f'{location}/total-gene.txt','w')
+    file_index = open(f'{location}/{ont}-total-index.txt','w')
+    file_gene = open(f'{location}/{ont}-total-gene.txt','w')
 
     for level in range(min_level - 1, max_level):
         matching = matchings[level]
+        print(f'level: {level+1} - matches: {len(matching)}')
         for pair in matching:
             [index1, index2] = pair.split('-')
             index1 = int(index1)
