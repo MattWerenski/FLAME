@@ -73,7 +73,7 @@ fprintf('[Loading annotations]\n');
 fprintf('Number of functional labels: %d\n', size(anno, 1));
 
 %% Generate training and testing sets
-fprintf('Acquiring test filter using %d testing fraction\n', test_fraction);
+fprintf('Acquiring test filter using %d testing fraction\n', options.test_fraction);
 [train_filt, test_filt, ntrain, ntest, ...
     train_labels, test_labels] = create_train_test(anno, options);
 
