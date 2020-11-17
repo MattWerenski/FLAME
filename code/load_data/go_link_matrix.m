@@ -28,6 +28,7 @@ function [link_mat] = go_link_matrix(path, ngene, filter)
     
     % create the sparse matrix of weights
     %link_mat = sparse(i1,i2,levels,ngene,ngene);
+    
     link_mat = sparse(i1,i2,weights,ngene,ngene);
     
     % filter out the links involving data in the test set

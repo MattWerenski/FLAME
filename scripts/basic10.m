@@ -40,12 +40,12 @@ options.embedding.ndim = 500;
 options.embedding.mustlink_penalty = 1; 
 
 % the weight of the edges connecting dummy nodes to dummy nodes
-options.embedding.cannotlink_penalty = 100; 
+options.embedding.cannotlink_penalty = 258; 
 
 
 % when using go, whether or not to append the extra link matrix
 % generated from the labels
-options.walk.use_go_link = true;
+options.walk.use_go_link = false;
 
 % chance that the random walk restarts itself
 options.walk.restart_prob = 0.5;
@@ -56,7 +56,11 @@ options.walk.restart_prob = 0.5;
 % testing set. (1 - test_fraction) is used to train
 options.test_fraction = 0.2; 
                     
-                    
+                     
+%% Logs the options so we can see the parameters used in log file later
+log_options(options);
+
+                   
 
 %% Construct network file paths
 string_nets = {'neighborhood', 'fusion', 'cooccurence', 'coexpression', ...
@@ -73,7 +77,7 @@ fprintf('[Loading annotations]\n');
 fprintf('Number of functional labels: %d\n', size(anno, 1));
 
 %% Generate training and testing sets
-fprintf('Acquiring test filter using %d testing fraction\n', test_fraction);
+fprintf('Acquiring test filter using %d testing fraction\n', options.test_fraction);
 [train_filt, test_filt, ntrain, ntest, ...
     train_labels, test_labels] = create_train_test(anno, options);
 
