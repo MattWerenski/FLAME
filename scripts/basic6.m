@@ -6,7 +6,7 @@ addpath code/embed;
 %% Example parameters
 
 % use human or yeast data
-options.org = 'human';
+options.org = 'yeast';
 
 % which type of annotations to use
 % options: {bp, mf, cc} for human GO,
@@ -84,8 +84,13 @@ fprintf('Acquiring test filter using %d testing fraction\n', options.test_fracti
 %% SMashup integration
 fprintf('[SMashup]\n');
 
+size(anno)
+fprintf(class(anno));
+
 fprintf('[Performing Biclustering]')
 [gene_clusters, label_clusters] = bicluster(anno, train_filt, options);
+
+%{
 
 %% Performs the specified variant of RWR
 fprintf('[Performing RWR step]\n');
@@ -106,3 +111,5 @@ else
     x_base = svd_embed(walks, options.embedding.ndim);
 end
 run_svm(x_base, anno, test_filt);
+
+%}
