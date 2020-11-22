@@ -17,6 +17,7 @@ function walks = compute_rwr(network_files, ngene, train_filt, options)
         dense_link = full(sparse_link);
         link_markov = markov_mat(dense_link);
         
+        % method 1 - run diffusion
         link_walk = rwr(link_markov, restart_prob);
         link_walk = reshape(link_walk, 1,ngene,ngene); % add an extra index for appending
         walks = cat(1, walks, link_walk); % tacks the extra walk onto the end

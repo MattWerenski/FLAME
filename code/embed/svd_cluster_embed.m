@@ -27,14 +27,27 @@ function x = svd_cluster_embed(walks, gene_clusters, options)
     nnodes = ngene + num_clusters;
     augmented = zeros(nnodes);
     augmented(1:ngene, 1:ngene) = RR_Sum;
+
+    % approach 1 - adjust the matrix entries
     % adds the cannot link between dummy nodes
-    augmented(ngene+1:nnodes,ngene+1:nnodes) = -cl_penalty + (cl_penalty * eye(num_clusters));
+    %augmented(ngene+1:nnodes,ngene+1:nnodes) = -cl_penalty + (cl_penalty * eye(num_clusters));
     % adds the must links from dummy nodes to genes
-    augmented(ngene+1:nnodes,1:ngene) = ml_penalty * gene_clusters;
-    augmented(1:ngene,ngene+1:nnodes) = ml_penalty * gene_clusters';
-        
-    [V, d] = eigs(augmented, ndim);
-    x = diag(sqrt(sqrt(diag(d)))) * V';
-    x = x(1:ngene, 1:ngene);
+    %augmented(ngene+1:nnodes,1:ngene) = ml_penalty * gene_clusters;
+    %augmented(1:ngene,ngene+1:nnodes) = ml_penalty * gene_clusters';
+    
+    % approach 2 - Follow SSDR
+    % treat the dummy nodes as their own things
+    augmented(ngene+1:nnodes, ngene+1:nnodes) = eye(num_clusters);
+    % create a constraint Laplacian
+    A = zeros(nnodes);
+    A(ngene+1:nnodes,ngene+1:nnodes) = cl_penalty - (cl_penalty * eye(num_clusters));
+    A(ngene+1:nnodes,1:ngene) = -ml_penalty * gene_clusters;
+    A(1:ngene,ngene+1:nnodes) = -ml_penalty * gene_clusters';
+    D = diag(sum(A));
+    L = D - A;
+
+    [V, d] = eigs(augmented*L*(augmented'), ndim);
+    y = diag(sqrt(sqrt(diag(d)))) * V';
+    x = y(:, 1:ngene);
 end
 
