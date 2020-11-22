@@ -6,7 +6,10 @@ function [gene_clusters, label_clusters] = bicluster(anno, train_filt, options)
         label_clusters = -1;
         return
     end
-    
+
+    fprintf('bc\n');
+    fprintf(class(anno(:,train_filt)));
+    size(anno(:,train_filt))
     clusters_data = spectralCoClustering(anno(:,train_filt), num_clusters, 0);
     
     gc = clusters_data.NumxCol;
