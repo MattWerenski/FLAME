@@ -6,7 +6,7 @@ addpath code/embed;
 %% Example parameters
 
 % use human or yeast data
-options.org = 'yeast';
+options.org = 'human';
 
 % which type of annotations to use
 % options: {bp, mf, cc} for human GO,
@@ -34,13 +34,13 @@ options.embedding.svd_approx = true;
 
 % number of dimensions
 % recommended: 800 for human, 500 for yeast
-options.embedding.ndim = 500;
+options.embedding.ndim = 800;
 
 % the weight of the edges connecting dummy nodes to true nodes
 options.embedding.mustlink_penalty = 1; 
 
 % the weight of the edges connecting dummy nodes to dummy nodes
-options.embedding.cannotlink_penalty = 0; 
+options.embedding.cannotlink_penalty = 4; 
 
 
 % when using go, whether or not to append the extra link matrix
