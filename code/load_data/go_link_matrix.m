@@ -1,7 +1,4 @@
 function [link_mat] = go_link_matrix(path, ngene, filter)
-
-    disp(path);
-
     [i1, i2, levels] = textread(path, '%d%d%d');
     
     % write the rules here for how much weight at each level
@@ -32,7 +29,7 @@ function [link_mat] = go_link_matrix(path, ngene, filter)
     link_mat = sparse(i1,i2,weights,ngene,ngene);
     
     % filter out the links involving data in the test set
-    link_mat(filter, :) = 0;
-    link_mat(:, filter) = 0;
+    link_mat(~filter, :) = 0;
+    link_mat(:, ~filter) = 0;
 end
 
