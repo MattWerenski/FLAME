@@ -3,6 +3,7 @@ python/figures/**
 L-BFGS-B-C
 libsvm-3.24
 data/**
+data_old/**
 logs/**
 GO_links/**
 GOlabels/**

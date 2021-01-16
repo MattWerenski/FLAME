@@ -40,9 +40,15 @@ function x = svd_cluster_embed(walks, gene_clusters, options)
     augmented(ngene+1:nnodes, ngene+1:nnodes) = eye(num_clusters);
     % create a constraint Laplacian
     A = zeros(nnodes);
+    
+    % optional ?  Add the unsupervised links as well
+    A(1:ngene,1:ngene) = 1 / (ngene * ngene);
+    
     A(ngene+1:nnodes,ngene+1:nnodes) = cl_penalty - (cl_penalty * eye(num_clusters));
     A(ngene+1:nnodes,1:ngene) = -ml_penalty * gene_clusters;
     A(1:ngene,ngene+1:nnodes) = -ml_penalty * gene_clusters';
+    
+    
     D = diag(sum(A));
     L = D - A;
 
