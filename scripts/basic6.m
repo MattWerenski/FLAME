@@ -34,34 +34,34 @@ options.embedding.svd_approx = true;
 
 % number of dimensions
 % recommended: 800 for human, 500 for yeast
-options.embedding.ndim = 800;
+options.embedding.ndim = 500;
 
 % the weight of the edges connecting dummy nodes to true nodes
 options.embedding.mustlink_penalty = 1; 
 
 % the weight of the edges connecting dummy nodes to dummy nodes
-options.embedding.cannotlink_penalty = 4; 
+options.embedding.cannotlink_penalty = 128; 
 
 
 % when using go, whether or not to append the extra link matrix
 % generated from the labels
 options.walk.use_go_link = true;
 
+% when using go and the link matrix, what fraction of links to use
+options.walk.go_link_fraction = 0.03;
+
 % chance that the random walk restarts itself
 options.walk.restart_prob = 0.5;
-
-
 
 % portion of the labelled vertices to go in the 
 % testing set. (1 - test_fraction) is used to train
 options.test_fraction = 0.2; 
                     
-                     
+                    
 %% Logs the options so we can see the parameters used in log file later
 log_options(options);
 
-
-
+ 
 %% Construct network file paths
 string_nets = {'neighborhood', 'fusion', 'cooccurence', 'coexpression', ...
                'experimental', 'database'};
@@ -84,13 +84,8 @@ fprintf('Acquiring test filter using %d testing fraction\n', options.test_fracti
 %% SMashup integration
 fprintf('[SMashup]\n');
 
-size(anno)
-fprintf(class(anno));
-
 fprintf('[Performing Biclustering]')
 [gene_clusters, label_clusters] = bicluster(anno, train_filt, options);
-
-%{
 
 %% Performs the specified variant of RWR
 fprintf('[Performing RWR step]\n');
@@ -111,5 +106,3 @@ else
     x_base = svd_embed(walks, options.embedding.ndim);
 end
 run_svm(x_base, anno, test_filt);
-
-%}

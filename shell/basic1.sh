@@ -1,11 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=placeholder
+#SBATCH --job-name=SSDR3
 #SBATCH --mail-type=FAIL,TIME_LIMIT
 #SBATCH --mail-user=mweren01@tufts.edu
 #SBATCH --ntasks=1
 #SBATCH --mem=100gb
-#SBATCH --time=06:00:00
-#SBATCH --output=../logs/h-m1-c4-b8-f.log
+#SBATCH --time=03:00:00
+#SBATCH --output=../logs/SSDR3.log
 
 . ~/.bashrc
 cd ~/merging_graphs/smashup

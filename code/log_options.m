@@ -11,6 +11,7 @@ function success = log_options(options)
   fprintf('options.embedding.mustlink_penalty: %d\n', options.embedding.mustlink_penalty);
   fprintf('options.embedding.cannotlink_penalty: %d\n', options.embedding.cannotlink_penalty);
   fprintf('options.walk.use_go_link: %s\n', tf{options.walk.use_go_link + 1});
+  fprintf('options.walk.go_link_fraction: %f\n', options.walk.go_link_fraction);
   fprintf('options.walk.restart_prob: %f\n', options.walk.restart_prob);
   fprintf('options.test_fraction: %f\n', options.test_fraction);
   fprintf('\n\n');

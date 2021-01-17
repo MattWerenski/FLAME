@@ -5,7 +5,7 @@
 #SBATCH --ntasks=1
 #SBATCH --mem=100gb
 #SBATCH --time=08:00:00
-#SBATCH --output=../logs/h-m1-c8-b8-t.log
+#SBATCH --output=../logs/b7.log
 
 . ~/.bashrc
 cd ~/merging_graphs/smashup

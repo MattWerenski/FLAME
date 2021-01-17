@@ -4,7 +4,8 @@ function walks = compute_rwr(network_files, ngene, train_filt, options)
     
     restart_prob = options.walk.restart_prob;
     use_go_link = options.walk.use_go_link;
-    
+    go_link_fraction = options.walk.go_link_fraction;    
+
     org = options.org;
     onttype = options.onttype;
 
@@ -13,7 +14,7 @@ function walks = compute_rwr(network_files, ngene, train_filt, options)
     if use_go_link
         fprintf('[Adding Constraint Matrix]')
         filepath = sprintf('data/annotations/%s/%s-total-index.txt', org, onttype);
-        sparse_link = go_link_matrix(filepath, ngene, train_filt);
+        sparse_link = go_link_matrix(filepath, ngene, train_filt, go_link_fraction);
         
         dense_link = full(sparse_link);
         link_markov = markov_mat(dense_link);
