@@ -40,22 +40,27 @@ options.embedding.ndim = 500;
 options.embedding.mustlink_penalty = 1; 
 
 % the weight of the edges connecting dummy nodes to dummy nodes
-options.embedding.cannotlink_penalty = 128; 
+options.embedding.cannotlink_penalty = 256; 
 
 
 % when using go, whether or not to append the extra link matrix
 % generated from the labels
-options.walk.use_go_link = true;
+options.walk.use_go_link = false;
 
 % when using go and the link matrix, what fraction of links to use
-options.walk.go_link_fraction = 0.12;
+options.walk.go_link_fraction = 1.0;
 
 % chance that the random walk restarts itself
 options.walk.restart_prob = 0.5;
 
-% portion of the labelled vertices to go in the 
+% number of folds for k-fold cross validation
+% if set to 1 or less then a single experiment is run
+options.kfolds = 5;
+
+% if options.kfolds is set to 1 or less then this is
+% the portion of the labelled vertices to go in the 
 % testing set. (1 - test_fraction) is used to train
-options.test_fraction = 0.2; 
+options.test_fraction = 0.2;
                     
                     
 %% Logs the options so we can see the parameters used in log file later
@@ -76,33 +81,44 @@ fprintf('[Loading annotations]\n');
 [genes, ngene, anno] = load_anno(options);
 fprintf('Number of functional labels: %d\n', size(anno, 1));
 
-%% Generate training and testing sets
-fprintf('Acquiring test filter using %d testing fraction\n', options.test_fraction);
-[train_filt, test_filt, ntrain, ntest, ...
-    train_labels, test_labels] = create_train_test(anno, options);
-
-%% SMashup integration
-fprintf('[SMashup]\n');
-
-fprintf('[Performing Biclustering]')
-[gene_clusters, label_clusters] = bicluster(anno, train_filt, options);
+if options.kfolds <= 1
+    %% Generate training and testing sets
+    fprintf('Acquiring test filter using %d testing fraction\n', options.test_fraction);
+    folds = create_kfolds(anno, options);
+else
+    folds = create_kfolds(anno, options);
+end
 
 %% Performs the specified variant of RWR
-fprintf('[Performing RWR step]\n');
-walks = compute_rwr(network_files, ngene, train_filt, options);
+    fprintf('[Performing RWR step]\n');
+    walks = compute_rwr(network_files, ngene, -1, options);
 
-fprintf('[Performing embedding step]\n');
-x = compute_embedding(walks, gene_clusters, options);
+for i = 1:length(folds)
 
-%% Use the embedding with SVMs
-fprintf('[Perfoming our version]\n');
-run_svm(x, anno, test_filt);
+    train_filt = folds(i).train_filt;
+    test_filt = folds(i).test_filt;
 
-%% Performs the base Mashup for comparison
-fprintf('[Performing base version]\n');
-if options.walk.use_go_link
-    x_base = svd_embed(walks(1:end-1,:,:), options.embedding.ndim);
-else
-    x_base = svd_embed(walks, options.embedding.ndim);
+
+    %% SMashup integration
+    fprintf('[SMashup] Fold %d / %d \n', i, options.kfolds);
+
+    fprintf('[Performing Biclustering]')
+    [gene_clusters, label_clusters] = bicluster(anno, train_filt, options);
+
+    fprintf('[Performing embedding step]\n');
+    x = compute_embedding(walks, gene_clusters, options);
+
+    %% Use the embedding with SVMs
+    fprintf('[Perfoming our version]\n');
+    run_svm(x, anno, test_filt);
+
+    %% Performs the base Mashup for comparison
+    fprintf('[Performing base version]\n');
+    if options.walk.use_go_link
+        x_base = svd_embed(walks(1:end-1,:,:), options.embedding.ndim);
+    else
+        x_base = svd_embed(walks, options.embedding.ndim);
+    end
+    run_svm(x_base, anno, test_filt);
+
 end
-run_svm(x_base, anno, test_filt);
