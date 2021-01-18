@@ -4,6 +4,7 @@ function x = svd_cluster_embed(walks, gene_clusters, options)
     ndim = embedding.ndim;
     cl_penalty = embedding.cannotlink_penalty;
     ml_penalty = embedding.mustlink_penalty;
+    use_unsupervised = options.embedding.use_unsupervised;
     num_clusters = options.num_clusters;
     
 
@@ -28,21 +29,16 @@ function x = svd_cluster_embed(walks, gene_clusters, options)
     augmented = zeros(nnodes);
     augmented(1:ngene, 1:ngene) = RR_Sum;
 
-    % approach 1 - adjust the matrix entries
-    % adds the cannot link between dummy nodes
-    %augmented(ngene+1:nnodes,ngene+1:nnodes) = -cl_penalty + (cl_penalty * eye(num_clusters));
-    % adds the must links from dummy nodes to genes
-    %augmented(ngene+1:nnodes,1:ngene) = ml_penalty * gene_clusters;
-    %augmented(1:ngene,ngene+1:nnodes) = ml_penalty * gene_clusters';
-    
-    % approach 2 - Follow SSDR
+    % Follow SSDR
     % treat the dummy nodes as their own things
     augmented(ngene+1:nnodes, ngene+1:nnodes) = eye(num_clusters);
     % create a constraint Laplacian
     A = zeros(nnodes);
 
     % optional ?  Add the unsupervised links as well
-    A(1:ngene,1:ngene) = 1 / (ngene * ngene);
+    if use_unsupervised
+        A(1:ngene,1:ngene) = 1 / (ngene * ngene);
+    end
     
     A(ngene+1:nnodes,ngene+1:nnodes) = cl_penalty - (cl_penalty * eye(num_clusters));
     A(ngene+1:nnodes,1:ngene) = -ml_penalty * gene_clusters;

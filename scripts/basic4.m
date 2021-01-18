@@ -42,6 +42,8 @@ options.embedding.mustlink_penalty = 1;
 % the weight of the edges connecting dummy nodes to dummy nodes
 options.embedding.cannotlink_penalty = 256; 
 
+% whether to add 1/ngene^2 strength constraint between all genes
+options.embedding.use_unsupervised = false;
 
 % when using go, whether or not to append the extra link matrix
 % generated from the labels
