@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH --job-name=placeholder
-#SBATCH --mail-type=FAIL,TIME_LIMIT
+#SBATCH --mail-type=ALL
 #SBATCH --mail-user=mweren01@tufts.edu
 #SBATCH --ntasks=1
-#SBATCH --mem=100gb
-#SBATCH --time=08:00:00
-#SBATCH --output=../logs/h-m1-c16-b8-t.log
+#SBATCH --mem=45gb
+#SBATCH --time=04:00:00
+#SBATCH --output=../logs/cc31-100.log
 
 . ~/.bashrc
 cd ~/merging_graphs/smashup

@@ -3,9 +3,9 @@
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=mweren01@tufts.edu
 #SBATCH --ntasks=1
-#SBATCH --mem=100gb
-#SBATCH --time=08:00:00
-#SBATCH --output=../logs/h-m1-c64-b8-t.log
+#SBATCH --mem=75gb
+#SBATCH --time=02:00:00
+#SBATCH --output=../logs/y-walks.log
 
 . ~/.bashrc
 cd ~/merging_graphs/smashup

@@ -1,5 +1,5 @@
 # organism being used
-org = 'yeast'
+org = 'human'
 
 # go tree being used
 ont = 'mf'
@@ -19,8 +19,8 @@ go_term_map_filepath = f'data/annotations/{org}/graph/go_{ont}.map'
 # path to the a file containing the structure of GO
 go_dag_filepath      = f'data/annotations/{org}/graph/go_{ont}.links'
 
-# lowest level to include in the data sets (h.bp - 5, h.mf - 8, y.mf - )
-min_level            = 5
+# lowest level to include in the data sets (h.bp - 5, h.mf - 8, y.mf - 5)
+min_level            = 8
 
 # where to output the dataset to
 location             = f'data/annotations/{org}'
@@ -34,7 +34,7 @@ create_total         = True
 
 # reads in the list of string genes
 file_gene_list = open(string_gene_filepath, 'r')
-string_genes = [None]
+string_genes = []
 for gene_line in file_gene_list.readlines():
     gene = gene_line.split()[0]
     string_genes.append(gene)
@@ -42,7 +42,7 @@ file_gene_list.close()
 
 # reads the list of GO genes in
 file_go_gene_list = open(go_gene_filepath, 'r')
-go_genes = [None]
+go_genes = []
 for gene_line in file_go_gene_list.readlines():
     gene = gene_line.split()[0]
     go_genes.append(gene)
@@ -309,8 +309,8 @@ if create_total:
             index1 = int(index1)
             index2 = int(index2)
 
-            gene1 = go_genes[index1]
-            gene2 = go_genes[index2]
+            gene1 = go_genes[index1 - 1]
+            gene2 = go_genes[index2 - 1]
 
             if gene1 in filt and gene2 in filt:
                 adj1 = string_map[gene1]

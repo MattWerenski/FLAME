@@ -11,16 +11,16 @@ options.org = 'human';
 % which type of annotations to use
 % options: {bp, mf, cc} for human GO,
 %          {level1, level2, level3} for yeast MIPS
-options.onttype = 'mf'; 
+options.onttype = 'bp'; 
 
 % consider terms in a specific size range (GO only)
 % examples: [11 30], [31 100], [101 300]
-options.ontsize = [31 100];       
+options.ontsize = [101 300];       
 
 
 
 % Number of bi-clusters to create (-1 to not bi-cluster)
-options.num_clusters = 8; 
+options.num_clusters = 10; 
 
 
 
@@ -40,21 +40,29 @@ options.embedding.ndim = 800;
 options.embedding.mustlink_penalty = 1; 
 
 % the weight of the edges connecting dummy nodes to dummy nodes
-options.embedding.cannotlink_penalty = 16; 
+options.embedding.cannotlink_penalty = 256; 
 
+% whether to add 1/ngene^2 strength constraint between all genes
+options.embedding.use_unsupervised = false;
 
 % when using go, whether or not to append the extra link matrix
 % generated from the labels
 options.walk.use_go_link = false;
 
+% when using go and the link matrix, what fraction of links to use
+options.walk.go_link_fraction = 1.0;
+
 % chance that the random walk restarts itself
 options.walk.restart_prob = 0.5;
 
+% number of folds for k-fold cross validation
+% if set to 1 or less then a single experiment is run
+options.kfolds = 5;
 
-
-% portion of the labelled vertices to go in the 
+% if options.kfolds is set to 1 or less then this is
+% the portion of the labelled vertices to go in the 
 % testing set. (1 - test_fraction) is used to train
-options.test_fraction = 0.2; 
+options.test_fraction = 0.2;
                     
                     
 %% Logs the options so we can see the parameters used in log file later
@@ -75,33 +83,53 @@ fprintf('[Loading annotations]\n');
 [genes, ngene, anno] = load_anno(options);
 fprintf('Number of functional labels: %d\n', size(anno, 1));
 
-%% Generate training and testing sets
-fprintf('Acquiring test filter using %d testing fraction\n', options.test_fraction);
-[train_filt, test_filt, ntrain, ntest, ...
-    train_labels, test_labels] = create_train_test(anno, options);
-
-%% SMashup integration
-fprintf('[SMashup]\n');
-
-fprintf('[Performing Biclustering]')
-[gene_clusters, label_clusters] = bicluster(anno, train_filt, options);
+if options.kfolds <= 1
+    %% Generate training and testing sets
+    fprintf('Acquiring test filter using %d testing fraction\n', options.test_fraction);
+    folds = create_kfolds(anno, options);
+else
+    folds = create_kfolds(anno, options);
+end
 
 %% Performs the specified variant of RWR
 fprintf('[Performing RWR step]\n');
-walks = compute_rwr(network_files, ngene, train_filt, options);
+if isfile(sprintf('data/walks/%s.mat', options.org))
+    % loading this file automatically adds walks to the workspace.
+    load(sprintf('data/walks/%s.mat', options.org));
+else
+    walks = compute_rwr(network_files, ngene, -1, options);
+    save('walks.mat', 'walks', '-v7.3');
+end
 
-fprintf('[Performing embedding step]\n');
-x = compute_embedding(walks, gene_clusters, options);
-
-%% Use the embedding with SVMs
-fprintf('[Perfoming our version]\n');
-run_svm(x, anno, test_filt);
-
-%% Performs the base Mashup for comparison
-fprintf('[Performing base version]\n');
 if options.walk.use_go_link
     x_base = svd_embed(walks(1:end-1,:,:), options.embedding.ndim);
 else
     x_base = svd_embed(walks, options.embedding.ndim);
 end
-run_svm(x_base, anno, test_filt);
+
+
+
+for i = 1:length(folds)
+
+    train_filt = folds(i).train_filt;
+    test_filt = folds(i).test_filt;
+
+
+    %% SMashup integration
+    fprintf('[SMashup] Fold %d / %d \n', i, options.kfolds);
+
+    fprintf('[Performing Biclustering]')
+    [gene_clusters, label_clusters] = bicluster(anno, train_filt, options);
+
+    fprintf('[Performing embedding step]\n');
+    x = compute_embedding(walks, gene_clusters, options);
+
+    %% Use the embedding with SVMs
+    fprintf('[Perfoming our version]\n');
+    run_svm(x, anno, test_filt);
+
+    %% Performs the base Mashup for comparison
+    fprintf('[Performing base version]\n');
+    run_svm(x_base, anno, test_filt);
+
+end
