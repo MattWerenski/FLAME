@@ -15,12 +15,12 @@ options.onttype = 'mf';
 
 % consider terms in a specific size range (GO only)
 % examples: [11 30], [31 100], [101 300]
-options.ontsize = [31 100];       
+options.ontsize = [11 30];       
 
 
 
 % Number of bi-clusters to create (-1 to not bi-cluster)
-options.num_clusters = 8; 
+options.num_clusters = 10; 
 
 
 
@@ -92,9 +92,25 @@ else
 end
 
 %% Performs the specified variant of RWR
-    fprintf('[Performing RWR step]\n');
+fprintf('[Performing RWR step]\n');
+if isfile(sprintf('data/walks/%s.mat', options.org))
+    fprintf('load walks');
+    % loading this file automatically adds walks to the workspace.
+    load(sprintf('data/walks/%s.mat', options.org));
+else
+    fprintf('[computing]');
     walks = compute_rwr(network_files, ngene, -1, options);
+    save(sprintf('data/walks/%s.mat', options.org), 'walks', '-v7.3');
+end
 
+if options.walk.use_go_link
+    x_base = svd_embed(walks(1:end-1,:,:), options.embedding.ndim);
+else
+    x_base = svd_embed(walks, options.embedding.ndim);
+end
+
+
+%{
 for i = 1:length(folds)
 
     train_filt = folds(i).train_filt;
@@ -116,11 +132,7 @@ for i = 1:length(folds)
 
     %% Performs the base Mashup for comparison
     fprintf('[Performing base version]\n');
-    if options.walk.use_go_link
-        x_base = svd_embed(walks(1:end-1,:,:), options.embedding.ndim);
-    else
-        x_base = svd_embed(walks, options.embedding.ndim);
-    end
     run_svm(x_base, anno, test_filt);
 
 end
+%}

@@ -6,21 +6,21 @@ addpath code/embed;
 %% Example parameters
 
 % use human or yeast data
-options.org = 'yeast';
+options.org = 'human';
 
 % which type of annotations to use
 % options: {bp, mf, cc} for human GO,
 %          {level1, level2, level3} for yeast MIPS
-options.onttype = 'mf'; 
+options.onttype = 'cc'; 
 
 % consider terms in a specific size range (GO only)
 % examples: [11 30], [31 100], [101 300]
-options.ontsize = [31 100];       
+options.ontsize = [101 300];       
 
 
 
 % Number of bi-clusters to create (-1 to not bi-cluster)
-options.num_clusters = 8; 
+options.num_clusters = 10; 
 
 
 
@@ -34,7 +34,7 @@ options.embedding.svd_approx = true;
 
 % number of dimensions
 % recommended: 800 for human, 500 for yeast
-options.embedding.ndim = 500;
+options.embedding.ndim = 800;
 
 % the weight of the edges connecting dummy nodes to true nodes
 options.embedding.mustlink_penalty = 1; 
@@ -92,8 +92,22 @@ else
 end
 
 %% Performs the specified variant of RWR
-    fprintf('[Performing RWR step]\n');
+fprintf('[Performing RWR step]\n');
+if isfile(sprintf('data/walks/%s.mat', options.org))
+    % loading this file automatically adds walks to the workspace.
+    load(sprintf('data/walks/%s.mat', options.org));
+else
     walks = compute_rwr(network_files, ngene, -1, options);
+    save('walks.mat', 'walks', '-v7.3');
+end
+
+if options.walk.use_go_link
+    x_base = svd_embed(walks(1:end-1,:,:), options.embedding.ndim);
+else
+    x_base = svd_embed(walks, options.embedding.ndim);
+end
+
+
 
 for i = 1:length(folds)
 
@@ -116,11 +130,6 @@ for i = 1:length(folds)
 
     %% Performs the base Mashup for comparison
     fprintf('[Performing base version]\n');
-    if options.walk.use_go_link
-        x_base = svd_embed(walks(1:end-1,:,:), options.embedding.ndim);
-    else
-        x_base = svd_embed(walks, options.embedding.ndim);
-    end
     run_svm(x_base, anno, test_filt);
 
 end
