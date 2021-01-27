@@ -1,15 +1,14 @@
 #!/bin/bash
-#SBATCH --job-name=placeholder
-#SBATCH --mail-type=FAIL,TIME_LIMIT
+#SBATCH --job-name=cross-v1
+#SBATCH --mail-type=ALL
 #SBATCH --mail-user=mweren01@tufts.edu
 #SBATCH --ntasks=1
-#SBATCH --mem=50gb
-#SBATCH --time=04:00:00
-#SBATCH --output=../logs/bp101-300.log
+#SBATCH --mem=80gb
+#SBATCH --time=5:00:00
+#SBATCH --output=../logs/p128.log
 
 . ~/.bashrc
 cd ~/merging_graphs/smashup
-
 echo "Attempting to run mashup"
 
-matlab -nodisplay -nodesktop < scripts/basic3.m
+matlab -nodisplay -nodesktop < scripts/parameters128.m

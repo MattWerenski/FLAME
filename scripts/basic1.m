@@ -11,11 +11,11 @@ options.org = 'human';
 % which type of annotations to use
 % options: {bp, mf, cc} for human GO,
 %          {level1, level2, level3} for yeast MIPS
-options.onttype = 'bp'; 
+options.onttype = 'mf'; 
 
 % consider terms in a specific size range (GO only)
 % examples: [11 30], [31 100], [101 300]
-options.ontsize = [11 30];       
+options.ontsize = [31 100];       
 
 
 
@@ -99,7 +99,7 @@ if isfile(sprintf('data/walks/%s.mat', options.org))
     load(sprintf('data/walks/%s.mat', options.org));
 else
     walks = compute_rwr(network_files, ngene, -1, options);
-    save('walks.mat', 'walks', '-v7.3');
+    %save('walks.mat', 'walks', '-v7.3');
 end
 
 if options.walk.use_go_link
@@ -108,7 +108,7 @@ else
     x_base = svd_embed(walks, options.embedding.ndim);
 end
 
-for i = 3:length(folds)
+for i = 1:length(folds)
 
     train_filt = folds(i).train_filt;
     test_filt = folds(i).test_filt;
@@ -127,9 +127,8 @@ for i = 3:length(folds)
     fprintf('[Perfoming our version]\n');
     run_svm(x, anno, test_filt);
 
-    %% Performs the base Mashup for comparison
-    fprintf('[Performing base version]\n');
 
+    fprintf('[Performing base version]\n');
     run_svm(x_base, anno, test_filt);
 
 end

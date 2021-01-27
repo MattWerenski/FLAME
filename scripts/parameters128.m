@@ -11,7 +11,7 @@ options.org = 'yeast';
 % which type of annotations to use
 % options: {bp, mf, cc} for human GO,
 %          {level1, level2, level3} for yeast MIPS
-options.onttype = 'mf'; 
+options.onttype = 'bp'; 
 
 % consider terms in a specific size range (GO only)
 % examples: [11 30], [31 100], [101 300]
@@ -20,7 +20,7 @@ options.ontsize = [31 100];
 
 
 % Number of bi-clusters to create (-1 to not bi-cluster)
-options.num_clusters = 8; 
+options.num_clusters = 10; 
 
 
 
@@ -94,20 +94,18 @@ end
 %% Performs the specified variant of RWR
 
 fprintf('[Performing RWR step]\n');
-if isfile(sprintf('data/walks/%s.mat', options.org))
-    % loading this file automatically adds walks to the workspace.
-    load(sprintf('data/walks/%s.mat', options.org));
-else
+%if isfile(sprintf('data/walks/%s.mat', options.org))
+%   % loading this file automatically adds walks to the workspace.
+%    load(sprintf('data/walks/%s.mat', options.org));
+%else
     walks = compute_rwr(network_files, ngene, -1, options);
-    %save('walks.mat', 'walks', '-v7.3');
-end
+%    save('walks.mat', 'walks', '-v7.3');
+%end
 
-if options.walk.use_go_link
-    x_base = svd_embed(walks(1:end-1,:,:), options.embedding.ndim);
-else
-    x_base = svd_embed(walks, options.embedding.ndim);
-end
-
+num_clusts = [2, 4, 8, 16, 32, 64];
+for j = 1:length(num_clusts)
+options.num_clusters = num_clusts(j);
+fprintf('num clusters: %d cl strength: %d', options.num_clusters, options.embedding.cannotlink_penalty);
 for i = 1:length(folds)
 
     train_filt = folds(i).train_filt;
@@ -128,7 +126,5 @@ for i = 1:length(folds)
     run_svm(x, anno, test_filt);
 
 
-    fprintf('[Performing base version]\n');
-    run_svm(x_base, anno, test_filt);
-
+end
 end
