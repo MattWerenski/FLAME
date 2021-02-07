@@ -1,24 +1,14 @@
-function [accuracy] = majority_voting(X, anno, test_filt,train_filt, knn, dist_mat)
+function [accuracy] = majority_voting(anno, test_filt,train_filt, knn, dist_mat)
 %----------------------------------------------------
 % function prediction with majority voting by kNN
 %----------------------------------------------------
-    filt = sum(anno) > 0;
-    %anno = anno(:,filt);
-    %X = X(:,filt);
-  
-    [nclass, ngene] = size(anno);
-      
-    test_filt = test_filt(filt);
-    train_ind = find(train_filt);
-    train_filt = train_filt(filt);
+    
+    labelled = sum(anno, 1) > 0;
     test_ind = find(test_filt);
-    train_filt_ind = find(train_filt);
-    %dist_mat = dist_mat(filt,filt);
-    ntest = sum(test_filt);
-    ntrain = ngene - ntest;
-    
-    
-    
+    % only look at training indices with labels
+    % this may be redundant since this filter happens earlier as well
+    train_ind = intersect(find(train_filt), find(labelled));
+    ntest = length(test_ind);
     acc = zeros(ntest,1);
     
     for p = 1:ntest
@@ -29,24 +19,27 @@ function [accuracy] = majority_voting(X, anno, test_filt,train_filt, knn, dist_m
         fun_weight = [];
         
         iknn = knn(:,i);
-        
         voting_knn = intersect(iknn, train_ind);
+        disp(voting_knn);
         
         if isempty(voting_knn)==1 % kNN neighbors not labelled thus can't vote
-            acc(p) = 10;          % delete these from the accuracy calculation
-        else
-            for j = 1:length(voting_knn)
-                %j_filt = find(train_ind==voting_knn(j));
-                j_fun = find(anno(:, voting_knn(j)));
-                j_num_fun = length(j_fun);
-                if j_num_fun ~= 0
-                    %dist = dist_mat(i,knn(i,voting_knn(j)));
-                    dist = dist_mat(i,voting_knn(j));
-                    j_weight = 1/dist*ones(1,j_num_fun);
-                    fun = [fun;j_fun]; %array of all funcitons from knn, including repeat terms.
-                    fun_weight = [fun_weight,j_weight];
-                end
-            end         
+            acc(p) = -1;          % delete these from the accuracy calculation
+            continue;
+        end
+        
+        for j = 1:length(voting_knn)
+            voter = voting_knn(j);
+            voter_fun = find(anno(:, voter));
+            voter_num_fun = length(voter_fun);
+            
+            if voter_num_fun == 0 % voter has no label
+                continue;
+            end
+            
+            dist = dist_mat(i,voter);
+            voter_weight = 1/dist*ones(1,voter_num_fun);
+            fun = [fun;voter_fun]; %array of all funcitons from knn, including repeat terms.
+            fun_weight = [fun_weight,voter_weight];
         end
         
         % count frequency of all functions voted by kNN neighbors 
@@ -66,6 +59,6 @@ function [accuracy] = majority_voting(X, anno, test_filt,train_filt, knn, dist_m
             acc(p)=0;
         end 
     end
-mean(acc)
-
+    acc = acc(acc ~= -1); % filter out the nodes with no labelled neighbors
+    accuracy = mean(acc);
 end
