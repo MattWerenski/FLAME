@@ -1,11 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=SSDR3
-#SBATCH --mail-type=FAIL,TIME_LIMIT
+#SBATCH --job-name=cross-v1
+#SBATCH --mail-type=ALL
 #SBATCH --mail-user=mweren01@tufts.edu
 #SBATCH --ntasks=1
+#SBATCH --cpus-per-task=16
 #SBATCH --mem=100gb
-#SBATCH --time=03:00:00
-#SBATCH --output=../logs/SSDR3.log
+#SBATCH --time=3:00:00
+#SBATCH --output=../logs/sc-h1.log
 
 . ~/.bashrc
 cd ~/merging_graphs/smashup

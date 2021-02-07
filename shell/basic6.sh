@@ -1,14 +1,14 @@
 #!/bin/bash
-#SBATCH --job-name=placeholder
+#SBATCH --job-name=cross-v1
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=mweren01@tufts.edu
 #SBATCH --ntasks=1
-#SBATCH --mem=100gb
-#SBATCH --time=08:00:00
-#SBATCH --output=../logs/b6.log
+#SBATCH --mem=80gb
+#SBATCH --time=5:00:00
+#SBATCH --output=../logs/q32.log
 
 . ~/.bashrc
 cd ~/merging_graphs/smashup
 echo "Attempting to run mashup"
 
-matlab -nodisplay -nodesktop < scripts/basic6.m
+matlab -nodisplay -nodesktop < scripts/parameters32.m

@@ -40,7 +40,7 @@ options.embedding.ndim = 500;
 options.embedding.mustlink_penalty = 1; 
 
 % the weight of the edges connecting dummy nodes to dummy nodes
-options.embedding.cannotlink_penalty = 256; 
+options.embedding.cannotlink_penalty = 128; 
 
 % whether to add 1/ngene^2 strength constraint between all genes
 options.embedding.use_unsupervised = false;
@@ -92,8 +92,21 @@ else
 end
 
 %% Performs the specified variant of RWR
-    fprintf('[Performing RWR step]\n');
+
+fprintf('[Performing RWR step]\n');
+if isfile(sprintf('data/walks/%s.mat', options.org))
+    % loading this file automatically adds walks to the workspace.
+    load(sprintf('data/walks/%s.mat', options.org));
+else
     walks = compute_rwr(network_files, ngene, -1, options);
+    %save('walks.mat', 'walks', '-v7.3');
+end
+
+if options.walk.use_go_link
+    x_base = svd_embed(walks(1:end-1,:,:), options.embedding.ndim);
+else
+    x_base = svd_embed(walks, options.embedding.ndim);
+end
 
 for i = 1:length(folds)
 
@@ -114,13 +127,8 @@ for i = 1:length(folds)
     fprintf('[Perfoming our version]\n');
     run_svm(x, anno, test_filt);
 
-    %% Performs the base Mashup for comparison
+
     fprintf('[Performing base version]\n');
-    if options.walk.use_go_link
-        x_base = svd_embed(walks(1:end-1,:,:), options.embedding.ndim);
-    else
-        x_base = svd_embed(walks, options.embedding.ndim);
-    end
     run_svm(x_base, anno, test_filt);
 
 end

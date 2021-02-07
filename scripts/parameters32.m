@@ -6,16 +6,16 @@ addpath code/embed;
 %% Example parameters
 
 % use human or yeast data
-options.org = 'human';
+options.org = 'yeast';
 
 % which type of annotations to use
 % options: {bp, mf, cc} for human GO,
 %          {level1, level2, level3} for yeast MIPS
-options.onttype = 'cc'; 
+options.onttype = 'bp'; 
 
 % consider terms in a specific size range (GO only)
 % examples: [11 30], [31 100], [101 300]
-options.ontsize = [101 300];       
+options.ontsize = [31 100];       
 
 
 
@@ -34,13 +34,13 @@ options.embedding.svd_approx = true;
 
 % number of dimensions
 % recommended: 800 for human, 500 for yeast
-options.embedding.ndim = 800;
+options.embedding.ndim = 500;
 
 % the weight of the edges connecting dummy nodes to true nodes
 options.embedding.mustlink_penalty = 1; 
 
 % the weight of the edges connecting dummy nodes to dummy nodes
-options.embedding.cannotlink_penalty = 256; 
+options.embedding.cannotlink_penalty = 32; 
 
 % whether to add 1/ngene^2 strength constraint between all genes
 options.embedding.use_unsupervised = false;
@@ -92,14 +92,15 @@ else
 end
 
 %% Performs the specified variant of RWR
+
 fprintf('[Performing RWR step]\n');
-if isfile(sprintf('data/walks/%s.mat', options.org))
-    % loading this file automatically adds walks to the workspace.
-    load(sprintf('data/walks/%s.mat', options.org));
-else
+%if isfile(sprintf('data/walks/%s.mat', options.org))
+%   % loading this file automatically adds walks to the workspace.
+%    load(sprintf('data/walks/%s.mat', options.org));
+%else
     walks = compute_rwr(network_files, ngene, -1, options);
-    save('walks.mat', 'walks', '-v7.3');
-end
+%    save('walks.mat', 'walks', '-v7.3');
+%end
 
 if options.walk.use_go_link
     x_base = svd_embed(walks(1:end-1,:,:), options.embedding.ndim);
@@ -109,6 +110,17 @@ end
 
 
 
+fprintf('[Performing Base Version]');
+for i = 1:length(folds)
+    train_filt = folds(i).train_filt;
+    test_filt = folds(i).test_filt;
+    run_svm(x_base, anno, test_filt);
+end
+    
+num_clusts = [2, 4, 8, 16, 32, 64];
+for j = 1:length(num_clusts)
+options.num_clusters = num_clusts(j);
+fprintf('num clusters: %d cl strength: %d', options.num_clusters, options.embedding.cannotlink_penalty);
 for i = 1:length(folds)
 
     train_filt = folds(i).train_filt;
@@ -128,8 +140,7 @@ for i = 1:length(folds)
     fprintf('[Perfoming our version]\n');
     run_svm(x, anno, test_filt);
 
-    %% Performs the base Mashup for comparison
-    fprintf('[Performing base version]\n');
-    run_svm(x_base, anno, test_filt);
 
+
+end
 end

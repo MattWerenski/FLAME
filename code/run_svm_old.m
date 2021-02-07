@@ -37,12 +37,12 @@ function [acc, f1, aupr] = run_svm(x, anno, test_filt)
         for ci = 1:length(cvec)
             tt = tic;
 
-            Ktrain = rbfK{gi}(~test_filt,~test_filt); % rbfK{gmax}(test_filt,~test_filt);
-            Ktest = rbfK{gi}(test_filt,~test_filt); % rbfK{gmax}(test_filt,~test_filt);
+            Ktrain = rbfK{gmax}(test_filt,~test_filt);
+            Ktest = rbfK{gmax}(test_filt,~test_filt);
   
             class_score = zeros(ntest, nclass);
-            parfor s = 1:nclass
-            %for s = 1:nclass
+            %parfor s = 1:nclass
+            for s = 1:nclass
                 Ytrain = full(double(anno(s,~test_filt)') * 2 - 1);
                 Ytest = full(double(anno(s,test_filt)') * 2 - 1);
   
@@ -73,8 +73,8 @@ function [acc, f1, aupr] = run_svm(x, anno, test_filt)
     Ktest = rbfK{gmax}(test_filt,~test_filt);
   
     class_score = zeros(ntest, nclass);
-    parfor s = 1:nclass
-    %for s = 1:nclass
+    %parfor s = 1:nclass
+    for s = 1:nclass
         Ytrain = full(double(anno(s,~test_filt)') * 2 - 1);
         Ytest = full(double(anno(s,test_filt)') * 2 - 1);
   
