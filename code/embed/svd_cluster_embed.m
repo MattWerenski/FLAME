@@ -1,5 +1,7 @@
 function x = svd_cluster_embed(walks, gene_clusters, options)
 
+    % we may want to adjust what we do with the augmenting nodes.
+
     embedding = options.embedding;
     ndim = embedding.ndim;
     cl_penalty = embedding.cannotlink_penalty;
@@ -40,15 +42,17 @@ function x = svd_cluster_embed(walks, gene_clusters, options)
         A(1:ngene,1:ngene) = 1 / (ngene * ngene);
     end
     
-    A(ngene+1:nnodes,ngene+1:nnodes) = cl_penalty - (cl_penalty * eye(num_clusters));
-    A(ngene+1:nnodes,1:ngene) = -ml_penalty * gene_clusters;
-    A(1:ngene,ngene+1:nnodes) = -ml_penalty * gene_clusters';
+    % add the ML and CL constraints
+    A(ngene+1:nnodes,ngene+1:nnodes) = -cl_penalty + (cl_penalty * eye(num_clusters));
+    A(ngene+1:nnodes,1:ngene) = ml_penalty * gene_clusters;
+    A(1:ngene,ngene+1:nnodes) = ml_penalty * gene_clusters';
     
     
     D = diag(sum(A));
     L = D - A;
 
-    [V, d] = eigs(augmented*L*(augmented'), ndim);
+    % [V, d] = eigs(augmented*L*(augmented'), ndim); old method, not correct.
+    [V, d] = eigs(augmented - L, ndim);
     y = diag(sqrt(sqrt(diag(d)))) * V';
     x = y(:, 1:ngene);
 end
