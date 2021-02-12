@@ -20,7 +20,6 @@ function [accuracy] = majority_voting(anno, test_filt,train_filt, knn, dist_mat)
         
         iknn = knn(:,i);
         voting_knn = intersect(iknn, train_ind);
-        disp(voting_knn);
         
         if isempty(voting_knn)==1 % kNN neighbors not labelled thus can't vote
             acc(p) = -1;          % delete these from the accuracy calculation
