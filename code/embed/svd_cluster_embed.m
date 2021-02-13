@@ -22,18 +22,19 @@ function x = svd_cluster_embed(walks, gene_clusters, options)
     clear R
     
     % normalize to have mean 0
-    RR_Sum = RR_sum - mean(RR_sum(:));
+    % RR_Sum = RR_sum - mean(RR_sum(:));
     % normalize to have std 1
-    RR_Sum = RR_Sum / std(RR_sum(:));
+    % RR_sum = RR_sum / std(RR_sum(:));
     
     
     nnodes = ngene + num_clusters;
     augmented = zeros(nnodes);
-    augmented(1:ngene, 1:ngene) = RR_Sum;
-
-    % Follow SSDR
+    augmented(1:ngene, 1:ngene) = RR_sum;
+R
     % treat the dummy nodes as their own things
-    augmented(ngene+1:nnodes, ngene+1:nnodes) = eye(num_clusters);
+    % the augmenting nodes should be comparable in length to the data
+    max_length = max(vecnorm(RR_sum));
+    augmented(ngene+1:nnodes, ngene+1:nnodes) = eye(num_clusters) * max_length;
     % create a constraint Laplacian
     A = zeros(nnodes);
 
@@ -43,16 +44,14 @@ function x = svd_cluster_embed(walks, gene_clusters, options)
     end
     
     % add the ML and CL constraints
-    A(ngene+1:nnodes,ngene+1:nnodes) = -cl_penalty + (cl_penalty * eye(num_clusters));
-    A(ngene+1:nnodes,1:ngene) = ml_penalty * gene_clusters;
-    A(1:ngene,ngene+1:nnodes) = ml_penalty * gene_clusters';
-    
+    A(ngene+1:nnodes,ngene+1:nnodes) = cl_penalty - (cl_penalty * eye(num_clusters));
+    A(ngene+1:nnodes,1:ngene) = -ml_penalty * gene_clusters;
+    A(1:ngene,ngene+1:nnodes) = -ml_penalty * gene_clusters';
     
     D = diag(sum(A));
     L = D - A;
 
-    % [V, d] = eigs(augmented*L*(augmented'), ndim); old method, not correct.
-    [V, d] = eigs(augmented - L, ndim);
+    [V, d] = eigs(augmented + L, ndim);
     y = diag(sqrt(sqrt(diag(d)))) * V';
     x = y(:, 1:ngene);
 end

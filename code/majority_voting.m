@@ -11,7 +11,7 @@ function [accuracy] = majority_voting(anno, test_filt,train_filt, knn, dist_mat)
     ntest = length(test_ind);
     acc = zeros(ntest,1);
     
-    for p = 1:ntest
+    parfor p = 1:ntest
         i = test_ind(p);    % gene id
         
         % collect all function labels from kNN neighbors
