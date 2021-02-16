@@ -18,7 +18,11 @@ options.onttype = 'bp';
 % examples: [11 30], [31 100], [101 300]
 options.ontsize = [11 30];       
 
+% number of kNN
 k=10;
+
+% use 1-p percent of the training labels to form extra graph
+extra_graph_filt = 0.0;
 
 % Number of bi-clusters to create (-1 to not bi-cluster)
 options.num_clusters = 4; 
@@ -97,49 +101,38 @@ fprintf('[Performing RWR step]\n');
 if isfile(sprintf('data/walks/%s.mat', options.org))
     % loading this file automatically adds walks to the workspace.
     load(sprintf('data/walks/%s.mat', options.org));
-    a=1
 else
-    %exit
+    exit
     walks = compute_rwr(network_files, ngene, -1, options);
-    %save('walks.mat', 'walks', '-v7.3');
-    a=2
+    save('walks.mat', 'walks', '-v7.3');
+
 end
 
-if ~options.walk.use_go_link
-    x_base = svd_embed(walks, options.embedding.ndim);
-end
+x_base = svd_embed(walks, options.embedding.ndim);
 
 acc = zeros(length(folds), 1);
 acc_base = acc;
+
 for i = 1:length(folds)
     walks2 = walks;
     train_filt = folds(i).train_filt;
     test_filt = folds(i).test_filt;
    
-    if options.walk.use_go_link
-        training_labels = anno.*(train_filt.');
-        [l1, l2] = size(training_labels);
-        rf = rand(l1,l2) > 0.8; % use 1-p fraction of the labels
-        filtered_labels = (rf .* training_labels) > 0;
+     
+    training_labels = anno.*(train_filt.');
+    [l1, l2] = size(training_labels);
+    rf = rand(l1,l2) > extra_graph_filt; % use 1-p fraction of the labels
+    filtered_labels = (rf .* training_labels) > 0;
 
-        link_mat = mustlink(filtered_labels);
-        restart_prob=0.5;
-        c_walk = constraint_walk(link_mat,restart_prob);
-        walks2(end+1,:,:) = c_walk;
-        x_base = svd_embed(walks2, options.embedding.ndim);
-    end
-    
-
+    link_mat = mustlink(filtered_labels);
+    restart_prob=0.5;
+    c_walk = constraint_walk(link_mat,restart_prob);
+    walks2(end+1,:,:) = c_walk;
+    x = svd_embed(walks2, options.embedding.ndim);
+     
     %% SMashup integration
     fprintf('[SMashup] Fold %d / %d \n', i, options.kfolds);
-
-    fprintf('[Performing Biclustering]')
-    [gene_clusters, label_clusters] = bicluster(anno, train_filt, options);
-
-    fprintf('[Performing embedding step]\n');
-    x = compute_embedding(walks2, gene_clusters, options);
-
-
+    
     %% Performs the base Mashup for comparison
     fprintf('[Performing base version]\n');
     [dist_mat_base,knn_base]=compute_knn(x_base, k);
@@ -158,7 +151,7 @@ fprintf('[base_accuracy_mean = %f ]\n', mean(acc_base));
 fprintf('[base_accuracy_std = %f ]\n', std(acc_base));
 
 fprintf('[accuracy_mean = %f ]\n', mean(acc));
-fprintf('[accuracy_std = %f ]\n', mean(acc));
+fprintf('[accuracy_std = %f ]\n', std(acc));
 
  
 
