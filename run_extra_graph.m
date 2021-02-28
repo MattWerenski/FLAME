@@ -1,8 +1,8 @@
 clear;clc;
 addpath(genpath('code'));
 addpath(genpath('data'));
-addpath(genpath('libsvm/matlab'));
-addpath(genpath('mtba'));
+%addpath(genpath('libsvm/matlab'));
+%addpath(genpath('mtba'));
 
 %% Example parameters
 
@@ -16,7 +16,7 @@ options.onttype = 'bp';
 
 % consider terms in a specific size range (GO only)
 % examples: [11 30], [31 100], [101 300]
-options.ontsize = [11 30];       
+options.ontsize = [31 100];       
 
 % number of kNN
 k=10;
@@ -52,7 +52,7 @@ options.embedding.use_unsupervised = false;
 
 % when using go, whether or not to append the extra link matrix
 % generated from the labels
-options.walk.use_go_link = true;
+options.walk.use_go_link = false;
 
 % when using go and the link matrix, what fraction of links to use
 options.walk.go_link_fraction = 1.0;
@@ -75,8 +75,8 @@ log_options(options);
 
  
 %% Construct network file paths
-string_nets = {'neighborhood', 'fusion', 'cooccurence', 'coexpression', ...
-               'experimental', 'database'};
+string_nets = {'neighborhood', 'fusion', 'cooccurence'}; % , 'coexpression', ...
+%               'experimental', 'database'};
 network_files = cell(1, length(string_nets));
 for i = 1:length(string_nets)
      network_files{i} = sprintf('data/networks/%s/%s_string_%s_adjacency.txt', ...
@@ -98,61 +98,85 @@ end
 
 %% Performs the specified variant of RWR
 fprintf('[Performing RWR step]\n');
-if isfile(sprintf('data/walks/%s.mat', options.org))
-    % loading this file automatically adds walks to the workspace.
-    load(sprintf('data/walks/%s.mat', options.org));
-else
-    exit
-    walks = compute_rwr(network_files, ngene, -1, options);
-    save('walks.mat', 'walks', '-v7.3');
 
-end
+% compute the network walks for both mu and f.
+walks = compute_rwr(network_files, ngene, -1, options);
 
-x_base = svd_embed(walks, options.embedding.ndim);
+% mu embedding is shared across all folds so we take it before cross-val
+x_mu = svd_embed(walks, options.embedding.ndim);
 
-acc = zeros(length(folds), 1);
-acc_base = acc;
+% mashup results
+acc_mu = zeros(length(folds), 1);
+f1_mu = zeros(length(folds), 1);
+auc_mu = zeros(length(folds), 1);
+
+% flame results
+acc_f = zeros(length(folds), 1);
+f1_f = zeros(length(folds), 1);
+auc_f = zeros(length(folds), 1);
+
+weighted = false;
+fprintf('weighted: false \n');
 
 for i = 1:length(folds)
-    walks2 = walks;
+    fprintf('Fold %d / %d \n', i, options.kfolds);
+    k = 10 * i;
+    fprintf('Using k = %f \n', k);
+    
     train_filt = folds(i).train_filt;
     test_filt = folds(i).test_filt;
-   
      
     training_labels = anno.*(train_filt.');
     [l1, l2] = size(training_labels);
+    
     rf = rand(l1,l2) > extra_graph_filt; % use 1-p fraction of the labels
     filtered_labels = (rf .* training_labels) > 0;
 
+    % copy the original walk matrices
+    walks2 = walks;
+
+    % get the additional label matrix
     link_mat = mustlink(filtered_labels);
     restart_prob=0.5;
     c_walk = constraint_walk(link_mat,restart_prob);
+    % add it to the network walks 
     walks2(end+1,:,:) = c_walk;
-    x = svd_embed(walks2, options.embedding.ndim);
+    
+    % compute the embedding with added network
+    x_f = svd_embed(walks2, options.embedding.ndim);
      
-    %% SMashup integration
-    fprintf('[SMashup] Fold %d / %d \n', i, options.kfolds);
     
-    %% Performs the base Mashup for comparison
-    fprintf('[Performing base version]\n');
-    [dist_mat_base,knn_base]=compute_knn(x_base, k);
-    [accuracy_base] = majority_voting(anno, test_filt,train_filt, knn_base, dist_mat_base)
-    acc_base(i) = accuracy_base;
+    %% Performs Mashup for comparison
+    fprintf('[Performing mu version]\n');
+    [dist_mat,knn] = compute_knn_labelled(x_mu, k, train_filt);
+    [acc, f1, auc] = matrix_majority_voting(anno, test_filt,train_filt, knn, dist_mat, weighted);
+    acc_mu(i) = acc;
+    f1_mu(i) = f1;
+    f1_mu(i) = auc;
     
-    %% Perform supervised version
-    fprintf('[Perfoming supervised version]\n');
-    [dist_mat,knn]=compute_knn(x, k);
-    accuracy = majority_voting(anno, test_filt,train_filt, knn, dist_mat)
-    acc(i) = accuracy;
+    %% Perform flame version
+    fprintf('[Perfoming f version]\n');
+    [dist_mat,knn] = compute_knn_labelled(x_f, k, train_filt);
+    [acc, f1, auc] = matrix_majority_voting(anno, test_filt,train_filt, knn, dist_mat, weighted);
+    acc_f(i) = acc;
+    f1_f(i) = f1;
+    auc_f(i) = auc;
 end
 
 
-fprintf('[base_accuracy_mean = %f ]\n', mean(acc_base));
-fprintf('[base_accuracy_std = %f ]\n', std(acc_base));
+fprintf('[mu accuracy mean = %f ]\n', mean(acc_mu));
+fprintf('[mu accuracy std = %f ]\n', std(acc_mu));
+fprintf('[mu f1 mean = %f ]\n', mean(f1_mu));
+fprintf('[mu f1 std = %f ]\n', std(f1_mu));
+fprintf('[mu auc mean = %f ]\n', mean(auc_mu));
+fprintf('[mu auc std = %f ]\n', std(auc_mu));
 
-fprintf('[accuracy_mean = %f ]\n', mean(acc));
-fprintf('[accuracy_std = %f ]\n', std(acc));
-
+fprintf('[f accuracy mean = %f ]\n', mean(acc_f));
+fprintf('[f accuracy std = %f ]\n', std(acc_f));
+fprintf('[f f1 mean = %f ]\n', mean(f1_f));
+fprintf('[f f1 std = %f ]\n', std(f1_f));
+fprintf('[f auc mean = %f ]\n', mean(auc_f));
+fprintf('[f auc std = %f ]\n', std(auc_f));
  
 
 

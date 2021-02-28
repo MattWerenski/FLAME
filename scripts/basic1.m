@@ -6,7 +6,7 @@ addpath code/embed;
 %% Example parameters
 
 % use human or yeast data
-options.org = 'human';
+options.org = 'yeast';
 
 % which type of annotations to use
 % options: {bp, mf, cc} for human GO,
@@ -20,7 +20,7 @@ options.ontsize = [31 100];
 
 
 % Number of bi-clusters to create (-1 to not bi-cluster)
-options.num_clusters = 10; 
+options.num_clusters = 8; 
 
 
 
@@ -34,13 +34,13 @@ options.embedding.svd_approx = true;
 
 % number of dimensions
 % recommended: 800 for human, 500 for yeast
-options.embedding.ndim = 800;
+options.embedding.ndim = 500;
 
 % the weight of the edges connecting dummy nodes to true nodes
 options.embedding.mustlink_penalty = 1; 
 
 % the weight of the edges connecting dummy nodes to dummy nodes
-options.embedding.cannotlink_penalty = 256; 
+options.embedding.cannotlink_penalty = 50; 
 
 % whether to add 1/ngene^2 strength constraint between all genes
 options.embedding.use_unsupervised = false;
@@ -109,26 +109,30 @@ else
 end
 
 for i = 1:length(folds)
-
+    options.embedding.mustlink_penalty = options.embedding.mustlink_penalty * 5;
+    options.embedding.cannotlink_panalty = options.embedding.cannotlink_penalty * 5;
+    
     train_filt = folds(i).train_filt;
     test_filt = folds(i).test_filt;
 
 
     %% SMashup integration
-    fprintf('[SMashup] Fold %d / %d \n', i, options.kfolds);
+%    fprintf('[SMashup] Fold %d / %d \n', i, options.kfolds);
 
-    fprintf('[Performing Biclustering]')
+%    fprintf('[Performing Biclustering]')
     [gene_clusters, label_clusters] = bicluster(anno, train_filt, options);
 
-    fprintf('[Performing embedding step]\n');
+%    fprintf('[Performing embedding step]\n');
     x = compute_embedding(walks, gene_clusters, options);
-
-    %% Use the embedding with SVMs
+    
     fprintf('[Perfoming our version]\n');
-    run_svm(x, anno, test_filt);
-
+    [dist_mat, knn] = compute_knn(x,20);
+    acc = majority_voting(anno, test_filt, train_filt, knn, dist_mat);
+    fprintf('Acc: %f \n', acc);
 
     fprintf('[Performing base version]\n');
-    run_svm(x_base, anno, test_filt);
+    [dist_mat, knn] = compute_knn(x_base,20);
+    acc = majority_voting(anno, test_filt, train_filt, knn, dist_mat);
+    fprintf('Acc: %f \n', acc);
 
 end

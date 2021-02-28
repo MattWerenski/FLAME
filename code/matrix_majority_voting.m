@@ -1,4 +1,4 @@
-function [accuracy] = matrix_majority_voting(anno, test_filt,train_filt, knn, dist_mat, weighted)
+function [acc, f1, auc] = matrix_majority_voting(anno, test_filt,train_filt, knn, dist_mat, weighted)
 %----------------------------------------------------
 % function prediction with majority voting by kNN
 %----------------------------------------------------
@@ -46,10 +46,13 @@ function [accuracy] = matrix_majority_voting(anno, test_filt,train_filt, knn, di
     had_votes = sum(class_score, 1) > 0;
     had_votes_anno = test_anno(:, had_votes);
     
+    % remove nodes with no voters
+    class_score = class_score(:, had_votes);
+    
     % make all columns sum to one
     class_score = class_score ./ sum(class_score);
     
-    fprintf('%f out of %f had voting neighbors', sum(had_votes), length(had_votes));
+    fprintf('%f out of %f had voting neighbors\n', sum(had_votes), length(had_votes));
     
-    evaluate_performance(class_score.', had_votes_anno.');
+    [acc, f1, auc] = evaluate_performance(class_score.', had_votes_anno.');
 end
