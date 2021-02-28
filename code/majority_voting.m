@@ -18,7 +18,9 @@ function [accuracy] = majority_voting(anno, test_filt,train_filt, knn, dist_mat)
         fun = [];
         fun_weight = [];
         
+        % indices of nearest neighbors
         iknn = knn(:,i);
+        % only care neighbors with labels
         voting_knn = intersect(iknn, train_ind);
         
         if isempty(voting_knn)==1 % kNN neighbors not labelled thus can't vote
@@ -26,12 +28,13 @@ function [accuracy] = majority_voting(anno, test_filt,train_filt, knn, dist_mat)
             continue;
         end
         
+        % tally the votes
         for j = 1:length(voting_knn)
             voter = voting_knn(j);
-            voter_fun = find(anno(:, voter));
+            voter_fun = find(anno(:, voter)); % annotations of the voter
             voter_num_fun = length(voter_fun);
             
-            if voter_num_fun == 0 % voter has no label
+            if voter_num_fun == 0 % voter has no label (shouldn't happen)
                 continue;
             end
             

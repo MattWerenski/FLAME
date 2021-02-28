@@ -20,29 +20,24 @@ function [acc, f1, aupr] = run_svm(x, anno, test_filt)
     ntest = sum(test_filt);
     ntrain = ngene - ntest;
   
-    %fprintf('Pregenerating kernels:\n');
     rbfK = cell(length(gvec), 1);
     for i = 1:length(gvec)
-        %fprintf('%d / %d ... ', i, length(gvec)); tic
         rbfK{i} = rbf_kernel(x', x', 10^gvec(i));
-        %fprintf('done. '); toc
     end
   
       
     retmax = -inf;
     gmax = 1;
     cmax = 1;
-    %fprintf('Running nested cross validation...\n');
     for gi = 1:length(gvec)
         for ci = 1:length(cvec)
             tt = tic;
 
-            Ktrain = rbfK{gi}(~test_filt,~test_filt); % rbfK{gmax}(test_filt,~test_filt);
-            Ktest = rbfK{gi}(test_filt,~test_filt); % rbfK{gmax}(test_filt,~test_filt);
+            Ktrain = rbfK{gi}(~test_filt,~test_filt);
+            Ktest = rbfK{gi}(test_filt,~test_filt);
   
             class_score = zeros(ntest, nclass);
             parfor s = 1:nclass
-            %for s = 1:nclass
                 Ytrain = full(double(anno(s,~test_filt)') * 2 - 1);
                 Ytest = full(double(anno(s,test_filt)') * 2 - 1);
   
@@ -68,13 +63,11 @@ function [acc, f1, aupr] = run_svm(x, anno, test_filt)
   
 
     % use the best parameters we computed above
-    %fprintf('Using best paramaters\n')
     Ktrain = rbfK{gmax}(~test_filt,~test_filt);
     Ktest = rbfK{gmax}(test_filt,~test_filt);
   
     class_score = zeros(ntest, nclass);
     parfor s = 1:nclass
-    %for s = 1:nclass
         Ytrain = full(double(anno(s,~test_filt)') * 2 - 1);
         Ytest = full(double(anno(s,test_filt)') * 2 - 1);
   

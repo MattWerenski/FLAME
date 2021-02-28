@@ -16,6 +16,7 @@ knn=zeros(k,n);
 % find knn neighbors for each of the nodes
 for i=1:n
     [dist,index]=sort(dist_mat(i,:),'descend');
+    % use of find makes it so a node doesn't use itself as a neighbor.
     nn=index(find(dist,k,'last'));
     knn(:,i)=nn;
 end
