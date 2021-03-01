@@ -1,8 +1,9 @@
-addpath mtba-nix/mtba-nix/mtba-nix/mtba;
-addpath libsvm-3.24/matlab; % LIBSVM package (for cross_validation.m)
-addpath L-BFGS-B-C/Matlab; % L-BFGS package (only if svd_approx = false)
-addpath code;
-addpath code/embed;
+clear;clc;
+addpath(genpath('code'));
+addpath(genpath('data'));
+%addpath(genpath('libsvm/matlab'));
+%addpath(genpath('mtba'));
+
 %% Example parameters
 
 % use human or yeast data
@@ -11,16 +12,20 @@ options.org = 'yeast';
 % which type of annotations to use
 % options: {bp, mf, cc} for human GO,
 %          {level1, level2, level3} for yeast MIPS
-options.onttype = 'mf'; 
+options.onttype = 'bp'; 
 
 % consider terms in a specific size range (GO only)
 % examples: [11 30], [31 100], [101 300]
 options.ontsize = [31 100];       
 
+% number of kNN
+k=50;
 
+% use 1-p percent of the training labels to form extra graph
+extra_graph_filt = 0.0;
 
 % Number of bi-clusters to create (-1 to not bi-cluster)
-options.num_clusters = 8; 
+options.num_clusters = 4; 
 
 
 
@@ -40,7 +45,7 @@ options.embedding.ndim = 500;
 options.embedding.mustlink_penalty = 1; 
 
 % the weight of the edges connecting dummy nodes to dummy nodes
-options.embedding.cannotlink_penalty = 128; 
+options.embedding.cannotlink_penalty = 64; 
 
 % whether to add 1/ngene^2 strength constraint between all genes
 options.embedding.use_unsupervised = false;
@@ -92,43 +97,87 @@ else
 end
 
 %% Performs the specified variant of RWR
-
 fprintf('[Performing RWR step]\n');
-if isfile(sprintf('data/walks/%s.mat', options.org))
-    % loading this file automatically adds walks to the workspace.
-    load(sprintf('data/walks/%s.mat', options.org));
-else
-    walks = compute_rwr(network_files, ngene, -1, options);
-    %save('walks.mat', 'walks', '-v7.3');
-end
 
-if options.walk.use_go_link
-    x_base = svd_embed(walks(1:end-1,:,:), options.embedding.ndim);
-else
-    x_base = svd_embed(walks, options.embedding.ndim);
-end
+% compute the network walks for both mu and f.
+walks = compute_rwr(network_files, ngene, -1, options);
+
+% mu embedding is shared across all folds so we take it before cross-val
+x_mu = svd_embed(walks, options.embedding.ndim);
+
+% mashup results
+acc_mu = zeros(length(folds), 1);
+f1_mu = zeros(length(folds), 1);
+auc_mu = zeros(length(folds), 1);
+
+% flame results
+acc_f = zeros(length(folds), 1);
+f1_f = zeros(length(folds), 1);
+auc_f = zeros(length(folds), 1);
+
+weighted = true;
+fprintf('weighted: true \n');
 
 for i = 1:length(folds)
-
+    fprintf('Fold %d / %d \n', i, options.kfolds);
+    fprintf('Using k = %f \n', k);
+    
     train_filt = folds(i).train_filt;
     test_filt = folds(i).test_filt;
+     
+    training_labels = anno.*(train_filt.');
+    [l1, l2] = size(training_labels);
+    
+    rf = rand(l1,l2) > extra_graph_filt; % use 1-p fraction of the labels
+    filtered_labels = (rf .* training_labels) > 0;
 
+    % copy the original walk matrices
+    walks2 = walks;
 
-    %% SMashup integration
-    fprintf('[SMashup] Fold %d / %d \n', i, options.kfolds);
-
-    fprintf('[Performing Biclustering]')
-    [gene_clusters, label_clusters] = bicluster(anno, train_filt, options);
-
-    fprintf('[Performing embedding step]\n');
-    x = compute_embedding(walks, gene_clusters, options);
-
-    %% Use the embedding with SVMs
-    fprintf('[Perfoming our version]\n');
-    run_svm(x, anno, test_filt);
-
-
-    fprintf('[Performing base version]\n');
-    run_svm(x_base, anno, test_filt);
-
+    % get the additional label matrix
+    link_mat = mustlink(filtered_labels);
+    restart_prob=0.5;
+    c_walk = constraint_walk(link_mat,restart_prob);
+    % add it to the network walks 
+    walks2(end+1,:,:) = c_walk;
+    
+    % compute the embedding with added network
+    x_f = svd_embed(walks2, options.embedding.ndim);
+     
+    
+    %% Performs Mashup for comparison
+    fprintf('[Performing mu version]\n');
+    [dist_mat,knn] = compute_knn_labelled(x_mu, k, train_filt);
+    [acc, f1, auc] = matrix_majority_voting(anno, test_filt,train_filt, knn, dist_mat, weighted);
+    acc_mu(i) = acc;
+    f1_mu(i) = f1;
+    auc_mu(i) = auc;
+    
+    %% Perform flame version
+    fprintf('[Perfoming f version]\n');
+    [dist_mat,knn] = compute_knn_labelled(x_f, k, train_filt);
+    [acc, f1, auc] = matrix_majority_voting(anno, test_filt,train_filt, knn, dist_mat, weighted);
+    acc_f(i) = acc;
+    f1_f(i) = f1;
+    auc_f(i) = auc;
 end
+
+
+fprintf('[mu accuracy mean = %f ]\n', mean(acc_mu));
+fprintf('[mu accuracy std = %f ]\n', std(acc_mu));
+fprintf('[mu f1 mean = %f ]\n', mean(f1_mu));
+fprintf('[mu f1 std = %f ]\n', std(f1_mu));
+fprintf('[mu auc mean = %f ]\n', mean(auc_mu));
+fprintf('[mu auc std = %f ]\n', std(auc_mu));
+
+fprintf('[f accuracy mean = %f ]\n', mean(acc_f));
+fprintf('[f accuracy std = %f ]\n', std(acc_f));
+fprintf('[f f1 mean = %f ]\n', mean(f1_f));
+fprintf('[f f1 std = %f ]\n', std(f1_f));
+fprintf('[f auc mean = %f ]\n', mean(auc_f));
+fprintf('[f auc std = %f ]\n', std(auc_f));
+ 
+
+
+    
+     
