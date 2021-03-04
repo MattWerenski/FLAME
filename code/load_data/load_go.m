@@ -25,7 +25,7 @@ function [anno, golevels] = load_go(org, gotype, genes, ontsize, no_overlap)
   nterm = length(textread(termfile, '%s'));
   
   % each entry is the go level of the term with same index in termfile.
-  golevels = textread(sprintf('%s/graph/go_%s.levels', go_path, gotype), '%s');
+  golevels = textread(sprintf('%s/graph/go_%s.levels', go_path, gotype), '%d');
   
   mapfile = sprintf('%s/graph/go_%s.map', go_path, gotype);
   [t, i] = textread(mapfile, '%s\t%d');
