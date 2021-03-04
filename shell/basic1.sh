@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=75gb
 #SBATCH --time=1:00:00
-#SBATCH --output=../logs/test-lknn.log
+#SBATCH --output=../logs/w-25nn.log
 
 . ~/.bashrc
 cd ~/merging_graphs/flame

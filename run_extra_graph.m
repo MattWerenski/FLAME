@@ -19,7 +19,7 @@ options.onttype = 'bp';
 options.ontsize = [31 100];       
 
 % number of kNN
-k=10;
+k=25;
 
 % use 1-p percent of the training labels to form extra graph
 extra_graph_filt = 0.0;
@@ -75,8 +75,8 @@ log_options(options);
 
  
 %% Construct network file paths
-string_nets = {'neighborhood', 'fusion', 'cooccurence'}; % , 'coexpression', ...
-%               'experimental', 'database'};
+string_nets = {'neighborhood', 'fusion', 'cooccurence', 'coexpression', ...
+               'experimental', 'database'};
 network_files = cell(1, length(string_nets));
 for i = 1:length(string_nets)
      network_files{i} = sprintf('data/networks/%s/%s_string_%s_adjacency.txt', ...
@@ -115,12 +115,11 @@ acc_f = zeros(length(folds), 1);
 f1_f = zeros(length(folds), 1);
 auc_f = zeros(length(folds), 1);
 
-weighted = false;
-fprintf('weighted: false \n');
+weighted = true;
+fprintf('weighted: true \n');
 
 for i = 1:length(folds)
     fprintf('Fold %d / %d \n', i, options.kfolds);
-    k = 10 * i;
     fprintf('Using k = %f \n', k);
     
     train_filt = folds(i).train_filt;
@@ -152,7 +151,7 @@ for i = 1:length(folds)
     [acc, f1, auc] = matrix_majority_voting(anno, test_filt,train_filt, knn, dist_mat, weighted);
     acc_mu(i) = acc;
     f1_mu(i) = f1;
-    f1_mu(i) = auc;
+    auc_mu(i) = auc;
     
     %% Perform flame version
     fprintf('[Perfoming f version]\n');

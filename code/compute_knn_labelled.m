@@ -9,17 +9,13 @@ function [dist_mat,knn]=compute_knn_labelled(X,k,train_filt);
 %-------------------------------------------------------
 
 dist_mat = squareform(pdist(X'));
- 
-fprintf('size and sum \n');
-size(train_filt)
-sum(train_filt)
-size(X)
+
 n=size(X,2);
 knn=zeros(k,n);
 
-% remove pairs not in the training set
+% remove columns not in the training set
 dist_mat(:,~train_filt) = 0;
-dist_mat(~train_filt,:) = 0;
+%dist_mat(~train_filt,:) = 0;
 
 % find knn neighbors for each of the nodes
 for i=1:n
