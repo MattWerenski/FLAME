@@ -3,7 +3,7 @@
 %% ontsize (optional): [min_size max_size], only return terms within a size range
 %% no_overlap (optional): remove redundant terms
 %%
-function anno = load_go(org, gotype, genes, ontsize, no_overlap)
+function [anno, golevels] = load_go(org, gotype, genes, ontsize, no_overlap)
   prefix = sprintf('go_%s_ref', org);
   
   go_path = sprintf('data/annotations/%s', org);
@@ -11,10 +11,11 @@ function anno = load_go(org, gotype, genes, ontsize, no_overlap)
   filt = ismember(genes, gogene);
   
   goterm = textread(sprintf('%s/%s_%s_terms.txt', go_path, prefix, gotype), '%s');
-  [g t] = textread(sprintf('%s/%s_%s_adjacency.txt', go_path, prefix, gotype), '%d%d');
+  [g, t] = textread(sprintf('%s/%s_%s_adjacency.txt', go_path, prefix, gotype), '%d%d');
   goanno = sparse(t, g, true, length(goterm), length(gogene));
   
   anno = zeros(length(goterm), length(genes));
+  
   genemap = containers.Map(gogene, 1:length(gogene));
   s2goind = cell2mat(values(genemap, genes(filt)));
   anno(:,filt) = goanno(:,s2goind);
@@ -22,6 +23,9 @@ function anno = load_go(org, gotype, genes, ontsize, no_overlap)
   %% Use ontology graph to propagation annotations
   termfile = sprintf('%s/graph/go_%s.terms', go_path, gotype);
   nterm = length(textread(termfile, '%s'));
+  
+  % each entry is the go level of the term with same index in termfile.
+  golevels = textread(sprintf('%s/graph/go_%s.levels', go_path, gotype), '%d');
   
   mapfile = sprintf('%s/graph/go_%s.map', go_path, gotype);
   [t, i] = textread(mapfile, '%s\t%d');
@@ -34,17 +38,23 @@ function anno = load_go(org, gotype, genes, ontsize, no_overlap)
   
   goind = cell2mat(values(m, goterm(isKey(m, goterm))));
   anno = (reachable(:,goind) * anno(isKey(m, goterm), :)) > 0; % propagate
-  anno = anno(sum(anno, 2) > 0,:);
+  
+  % filter out any unused go terms.
+  filt = sum(anno, 2) > 0;
+  anno = anno(filt,:);
+  golevels = golevels(filt);
+
 
   %% Select terms in the given size range
   if exist('ontsize', 'var')
     term_size = sum(anno, 2);
     filt = ontsize(1) <= term_size & term_size <= ontsize(2);
     anno = anno(filt,:);
+    golevels = golevels(filt);
   end
 
   %% Remove redundant terms
   if exist('no_overlap', 'var') && no_overlap
-    anno = filter_anno(anno, 0.1);
+    [anno, golevels]  = filter_anno(anno, golevels, 0.1);
   end
 end

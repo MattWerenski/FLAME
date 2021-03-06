@@ -1,4 +1,4 @@
-function [genes, ngene, anno] = load_anno(options)
+function [genes, ngene, anno, levels] = load_anno(options)
     addpath code/load_data
     
     org = options.org;
@@ -11,8 +11,9 @@ function [genes, ngene, anno] = load_anno(options)
     
     if contains(onttype, 'level') % check if using go or mips
         anno = load_mips(onttype, genes);
+        levels = 0;
     else
-        anno = load_go(org, onttype, genes, ontsize, true); 
+        [anno, levels] = load_go(org, onttype, genes, ontsize, true); 
     end
 end
 
