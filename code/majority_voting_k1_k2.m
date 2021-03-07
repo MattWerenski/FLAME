@@ -1,4 +1,4 @@
-function [accuracy] = majority_voting_k1_k2(dist_mat,k1,k2, anno, test_filt,train_filt)
+function [accuracy, predictions] = majority_voting_k1_k2(dist_mat,k1,k2, anno, test_filt,train_filt)
 %----------------------------------------------------
 % function prediction with majority voting by kNN
 %----------------------------------------------------
@@ -11,6 +11,7 @@ function [accuracy] = majority_voting_k1_k2(dist_mat,k1,k2, anno, test_filt,trai
     train_ind = intersect(find(train_filt), find(labelled));
     ntest = length(test_ind);
     acc = zeros(ntest,1);
+    predictions = zeros(ntest,1);
     
     parfor p = 1:ntest
         i = test_ind(p);    % gene id
@@ -70,6 +71,7 @@ function [accuracy] = majority_voting_k1_k2(dist_mat,k1,k2, anno, test_filt,trai
         
         [~,max_freq_ind] = max(fun_freq);
         pred_fun = fun_list(max_freq_ind);
+        predictions(p) = pred_fun; % store the prediction
         true_fun = find(anno(:,i));
         if ~isempty(intersect(pred_fun, true_fun)) 
             acc(p)=1;
